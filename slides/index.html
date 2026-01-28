@@ -422,18 +422,18 @@ fffics-srv-4 | SUCCESS => { "ping": "pong" }</code></pre>
     <h2>Anatomy of an Ansible Task</h2>
     <p>Tasks are the building blocks. Each task calls a module with parameters:</p>
     <pre><code>- name: Install MySQL server
-  apt:
+  ansible.builtin.apt:
     name: mysql-server
     state: present
-    update_cache: yes</code></pre>
+    update_cache: true</code></pre>
     <table style="margin-top: 20px;">
         <tr>
             <td><code>- name:</code></td>
             <td>Human-readable description (shows in output when running)</td>
         </tr>
         <tr>
-            <td><code>apt:</code></td>
-            <td>The module to use (apt manages Debian/Ubuntu packages)</td>
+            <td><code>ansible.builtin.apt:</code></td>
+            <td>Fully qualified module name (FQCN)</td>
         </tr>
         <tr>
             <td><code>name:</code></td>
@@ -463,7 +463,7 @@ packages:
   - mysql
 
 # Nested structures
-apt:
+ansible.builtin.apt:
   name: nginx
   state: present</code></pre>
         </div>
@@ -473,7 +473,10 @@ apt:
                 <p class="small">Use spaces, never tabs. 2 spaces per level is standard.</p>
             </div>
             <div class="tip" style="margin-top: 20px;">
-                <p class="small">VS Code highlights YAML syntax errors in red. Watch for squiggly lines!</p>
+                <p class="small">Use <code>true</code>/<code>false</code> not <code>yes</code>/<code>no</code></p>
+            </div>
+            <div class="note" style="margin-top: 20px;">
+                <p class="small">VS Code highlights YAML syntax errors in red.</p>
             </div>
         </div>
     </div>
@@ -489,7 +492,7 @@ wordpress_db_name: "wordpress"
 
 # Used in a task (note the curly braces and quotes)
 - name: Create WordPress database
-  mysql_db:
+  community.mysql.mysql_db:
     name: "{{ wordpress_db_name }}"
     login_password: "{{ mysql_root_password }}"</code></pre>
     <div class="tip">
@@ -499,44 +502,38 @@ wordpress_db_name: "wordpress"
 
 <!-- Slide 14: Common Modules Reference -->
 <div class="slide">
-    <h2>Common Ansible Modules</h2>
+    <h2>Common Ansible Modules (FQCN)</h2>
     <table>
         <tr>
             <th>Module</th>
             <th>Purpose</th>
-            <th>Example Use</th>
         </tr>
         <tr>
-            <td><code>apt</code></td>
-            <td>Install/remove packages</td>
-            <td>Install nginx, mysql-server</td>
+            <td><code>ansible.builtin.apt</code></td>
+            <td>Install/remove packages on Debian/Ubuntu</td>
         </tr>
         <tr>
-            <td><code>service</code></td>
-            <td>Start/stop/enable services</td>
-            <td>Start mysql, enable on boot</td>
+            <td><code>ansible.builtin.service</code></td>
+            <td>Start/stop/enable system services</td>
         </tr>
         <tr>
-            <td><code>file</code></td>
+            <td><code>ansible.builtin.file</code></td>
             <td>Create files/directories, set permissions</td>
-            <td>Create /var/www/wordpress</td>
         </tr>
         <tr>
-            <td><code>template</code></td>
+            <td><code>ansible.builtin.template</code></td>
             <td>Copy files with variable substitution</td>
-            <td>Generate wp-config.php</td>
         </tr>
         <tr>
-            <td><code>get_url</code></td>
+            <td><code>ansible.builtin.get_url</code></td>
             <td>Download files from URLs</td>
-            <td>Download WordPress tarball</td>
         </tr>
         <tr>
-            <td><code>mysql_db</code></td>
+            <td><code>community.mysql.mysql_db</code></td>
             <td>Create/manage MySQL databases</td>
-            <td>Create wordpress database</td>
         </tr>
     </table>
+    <p class="small" style="margin-top: 20px;">FQCN = Fully Qualified Collection Name (best practice for Ansible 2.10+)</p>
 </div>
 
 <!-- Slide 15: Exercise Intro -->
@@ -575,9 +572,10 @@ wordpress_db_name: "wordpress"
     </div>
     <pre style="margin-top: 30px;"><code># Correct structure:
 - name: Description here
-  module_name:
-    parameter1: value1
-    parameter2: "{{ variable_name }}"</code></pre>
+  ansible.builtin.apt:
+    name: package-name
+    state: present
+    update_cache: true</code></pre>
 </div>
 
 <!-- Slide 17: Verify Session 1 -->
