@@ -172,11 +172,6 @@
             margin-bottom: 60px;
         }
 
-        .emoji {
-            font-size: 3em;
-            margin-bottom: 30px;
-        }
-
         .warning {
             background: #ff6b6b22;
             border-left: 4px solid #ff6b6b;
@@ -188,6 +183,14 @@
         .tip {
             background: #00ff8822;
             border-left: 4px solid #00ff88;
+            padding: 20px 30px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .note {
+            background: #00d4ff22;
+            border-left: 4px solid #00d4ff;
             padding: 20px 30px;
             margin: 20px 0;
             border-radius: 0 10px 10px 0;
@@ -215,112 +218,138 @@
             font-size: 0.8em;
             color: #888;
         }
+
+        .bullet-check li::marker {
+            content: "[+] ";
+            color: #00ff88;
+        }
     </style>
 </head>
 <body>
 
 <!-- Slide 1: Title -->
 <div class="slide title-slide active">
-    <div class="emoji">&#9881;&#65039;</div>
     <h1>Ansible Workshop</h1>
-    <p class="subtitle">Automating Infrastructure with Code</p>
-    <p>Deploy WordPress across 3 servers - hands on!</p>
+    <p class="subtitle">Infrastructure Automation with Code</p>
+    <p>Hands-on: Deploy a WordPress website across 3 servers</p>
+    <p class="small" style="margin-top: 40px;">Session 1: Foundations + MySQL | Session 2: WordPress + Nginx</p>
 </div>
 
-<!-- Slide 2: What We're Building -->
+<!-- Slide 2: What is Infrastructure Automation -->
 <div class="slide">
-    <h2>What We're Building Today</h2>
+    <h2>What is Infrastructure Automation?</h2>
+    <p>Instead of manually running commands on each server, we write code that describes the desired state of our systems.</p>
+    <div class="two-column" style="margin-top: 30px;">
+        <div class="column">
+            <h3>Without Automation</h3>
+            <p class="small">- SSH into each server one by one</p>
+            <p class="small">- Run commands manually</p>
+            <p class="small">- Hope you remember the steps</p>
+            <p class="small">- Repeat for every new server</p>
+        </div>
+        <div class="column">
+            <h3>With Automation</h3>
+            <p class="small">- Write configuration once</p>
+            <p class="small">- Apply to any number of servers</p>
+            <p class="small">- Configuration is documented</p>
+            <p class="small">- Reproducible every time</p>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 3: What is Ansible -->
+<div class="slide">
+    <h2>What is Ansible?</h2>
+    <p>Ansible is an open-source automation tool created by Red Hat. It connects to your servers via SSH and executes tasks you define in YAML files.</p>
+    <ul style="margin-top: 30px;">
+        <li><span class="highlight">Agentless</span> - Nothing to install on target servers. Uses existing SSH.</li>
+        <li><span class="highlight">Declarative</span> - You describe WHAT you want, not HOW to do it.</li>
+        <li><span class="highlight">Idempotent</span> - Running the same playbook twice won't break anything. It only makes changes when needed.</li>
+        <li><span class="highlight">YAML-based</span> - Human-readable configuration files, easy to learn.</li>
+    </ul>
+</div>
+
+<!-- Slide 4: What We're Building -->
+<div class="slide">
+    <h2>Our Architecture: 3-Tier Web Application</h2>
     <div class="diagram">
         <pre style="background: transparent; border: none; text-align: center;">
-&#127760; Users
-    |
-    v
+Internet Users
+       |
+       v
 +------------------+        +------------------+        +------------------+
-|   Web Server     |   -->  |    WordPress     |   -->  |    Database      |
-|     (Nginx)      |        |   (PHP + WP)     |        |     (MySQL)      |
+|   Web Server     |  --->  |  App Server      |  --->  |  Database        |
+|     NGINX        |        |  WordPress/PHP   |        |     MySQL        |
 |   fffics-srv-4   |        |   fffics-srv-3   |        |   fffics-srv-2   |
+|  (reverse proxy) |        | (runs PHP code)  |        | (stores data)    |
 +------------------+        +------------------+        +------------------+
         </pre>
     </div>
-    <p>3 servers, 3 roles, 1 playbook - fully automated!</p>
+    <p class="small">This is a common production pattern: separate concerns across multiple servers for security, scalability, and maintainability.</p>
 </div>
 
-<!-- Slide 3: Why Ansible? -->
+<!-- Slide 5: Why Three Servers -->
 <div class="slide">
-    <h2>Why Ansible?</h2>
-    <ul>
-        <li><span class="highlight">Agentless</span> - No software to install on servers</li>
-        <li><span class="highlight">SSH-based</span> - Uses what you already have</li>
-        <li><span class="highlight">Human-readable</span> - YAML configuration</li>
-        <li><span class="highlight">Idempotent</span> - Safe to run multiple times</li>
-    </ul>
-    <div class="tip">
-        <p>"Automate the boring stuff so you can focus on the interesting stuff"</p>
-    </div>
-</div>
-
-<!-- Slide 4: Manual vs Ansible -->
-<div class="slide">
-    <h2>Manual Setup vs Ansible</h2>
+    <h2>Why Separate Servers?</h2>
     <div class="two-column">
         <div class="column">
-            <h3>Manual (old way)</h3>
-            <ul>
-                <li>SSH into server 1...</li>
-                <li>Run 20 commands...</li>
-                <li>SSH into server 2...</li>
-                <li>Run 20 more commands...</li>
-                <li>SSH into server 3...</li>
-                <li>Hope you didn't typo anything</li>
-            </ul>
+            <h3>Security</h3>
+            <p class="small">Database is not directly exposed to the internet. Only the web server is public-facing.</p>
+            <h3 style="margin-top: 30px;">Scalability</h3>
+            <p class="small">Need more capacity? Add more WordPress servers behind the load balancer.</p>
         </div>
         <div class="column">
-            <h3>Ansible (new way)</h3>
-            <pre><code>ansible-playbook playbook.yml</code></pre>
-            <p style="margin-top: 40px;">&#9989; One command</p>
-            <p>&#9989; Repeatable</p>
-            <p>&#9989; Documented</p>
-            <p>&#9989; Version controlled</p>
+            <h3>Maintainability</h3>
+            <p class="small">Update WordPress without touching the database. Restart Nginx without affecting PHP.</p>
+            <h3 style="margin-top: 30px;">Fault Isolation</h3>
+            <p class="small">If WordPress crashes, your database keeps running. Problems are contained.</p>
         </div>
     </div>
 </div>
 
-<!-- Slide 5: Key Concepts -->
+<!-- Slide 6: Ansible Key Concepts Overview -->
 <div class="slide">
     <h2>Ansible Key Concepts</h2>
     <table>
         <tr>
-            <th>Concept</th>
-            <th>What it is</th>
+            <th>Term</th>
+            <th>What It Is</th>
+            <th>File</th>
         </tr>
         <tr>
-            <td><code>inventory</code></td>
-            <td>List of servers and how to group them</td>
+            <td><code>Inventory</code></td>
+            <td>List of servers and how to connect to them</td>
+            <td>inventory.ini</td>
         </tr>
         <tr>
-            <td><code>playbook</code></td>
-            <td>YAML file describing what to do</td>
+            <td><code>Playbook</code></td>
+            <td>YAML file containing plays (groups of tasks)</td>
+            <td>playbook.yml</td>
         </tr>
         <tr>
-            <td><code>role</code></td>
-            <td>Reusable collection of tasks</td>
+            <td><code>Role</code></td>
+            <td>Reusable, organized collection of tasks</td>
+            <td>roles/mysql/</td>
         </tr>
         <tr>
-            <td><code>task</code></td>
-            <td>Single action (install package, start service)</td>
+            <td><code>Task</code></td>
+            <td>Single action: install a package, start a service</td>
+            <td>tasks/main.yml</td>
         </tr>
         <tr>
-            <td><code>module</code></td>
-            <td>Built-in tool for common operations</td>
+            <td><code>Module</code></td>
+            <td>Built-in Ansible tool (apt, service, file, etc.)</td>
+            <td>-</td>
         </tr>
     </table>
 </div>
 
-<!-- Slide 6: Inventory File -->
+<!-- Slide 7: The Inventory File -->
 <div class="slide">
     <h2>The Inventory File</h2>
-    <p>Tells Ansible about your servers:</p>
-    <pre><code>[webserver]
+    <p>The inventory tells Ansible which servers exist and how to group them:</p>
+    <pre><code># Groups are defined in [brackets]
+[webserver]
 fffics-srv-4 ansible_host=100.65.5.241
 
 [wordpress]
@@ -329,243 +358,421 @@ fffics-srv-3 ansible_host=100.65.4.183
 [database]
 fffics-srv-2 ansible_host=100.65.6.146
 
+# Variables that apply to ALL servers
 [all:vars]
 ansible_user=cyberrange</code></pre>
-    <p class="small">Groups in [brackets], variables after hostnames</p>
-</div>
-
-<!-- Slide 7: Step 1 - SSH Setup -->
-<div class="slide">
-    <h2>Step 1: SSH Setup</h2>
-    <p>First, let's set up SSH keys so Ansible can connect:</p>
-    <pre><code>./setup-ssh.sh</code></pre>
-    <p>This will:</p>
-    <ul>
-        <li>Generate an SSH key (if needed)</li>
-        <li>Copy your key to all 3 servers</li>
-        <li>Test the connections</li>
-    </ul>
-    <div class="warning">
-        <p>Update the IPs in <code>inventory.ini</code> first!</p>
+    <div class="note">
+        <p>Group names like <code>[database]</code> let us target specific servers in our playbook.</p>
     </div>
 </div>
 
-<!-- Slide 8: First Command -->
+<!-- Slide 8: What is SSH -->
 <div class="slide">
-    <h2>Your First Ansible Command</h2>
-    <p>Test that Ansible can reach all servers:</p>
+    <h2>How Ansible Connects: SSH</h2>
+    <p><strong>SSH (Secure Shell)</strong> is a protocol for securely connecting to remote computers over a network.</p>
+    <div class="two-column" style="margin-top: 20px;">
+        <div class="column">
+            <h3>Password Authentication</h3>
+            <p class="small">Type password every time you connect. Less secure, tedious for automation.</p>
+        </div>
+        <div class="column">
+            <h3>Key Authentication</h3>
+            <p class="small">Use a cryptographic key pair. More secure, no password needed.</p>
+        </div>
+    </div>
+    <div class="tip" style="margin-top: 30px;">
+        <p>We use SSH keys so Ansible can connect to all 3 servers without prompting for passwords.</p>
+    </div>
+</div>
+
+<!-- Slide 9: SSH Setup -->
+<div class="slide">
+    <h2>Step 1: Set Up SSH Keys</h2>
+    <p>First, update your server IPs in <code>inventory.ini</code>, then run:</p>
+    <pre><code>./setup-ssh.sh</code></pre>
+    <p>This script will:</p>
+    <ul>
+        <li>Generate an SSH key pair if you don't have one</li>
+        <li>Copy your public key to all 3 servers (so they trust your machine)</li>
+        <li>Test that passwordless SSH works</li>
+    </ul>
+    <div class="warning">
+        <p><strong>Important:</strong> Update the IP addresses in <code>inventory.ini</code> to match YOUR servers before running!</p>
+    </div>
+</div>
+
+<!-- Slide 10: First Ansible Command -->
+<div class="slide">
+    <h2>Step 2: Test Ansible Connectivity</h2>
+    <p>The <code>ping</code> module tests if Ansible can reach and authenticate to your servers:</p>
     <pre><code>ansible all -m ping</code></pre>
-    <p>Expected output:</p>
+    <p>Breaking this down:</p>
+    <ul>
+        <li><code>ansible</code> - the command-line tool</li>
+        <li><code>all</code> - target all servers in the inventory</li>
+        <li><code>-m ping</code> - use the "ping" module (not network ping - this tests SSH + Python)</li>
+    </ul>
     <pre style="color: #00ff88;"><code>fffics-srv-2 | SUCCESS => { "ping": "pong" }
 fffics-srv-3 | SUCCESS => { "ping": "pong" }
 fffics-srv-4 | SUCCESS => { "ping": "pong" }</code></pre>
-    <div class="tip">
-        <p>Green = good! Red = check your inventory and SSH setup</p>
-    </div>
 </div>
 
-<!-- Slide 9: Anatomy of a Task -->
+<!-- Slide 11: Anatomy of a Task -->
 <div class="slide">
-    <h2>Anatomy of a Task</h2>
+    <h2>Anatomy of an Ansible Task</h2>
+    <p>Tasks are the building blocks. Each task calls a module with parameters:</p>
     <pre><code>- name: Install MySQL server
   apt:
     name: mysql-server
     state: present
     update_cache: yes</code></pre>
-    <table>
+    <table style="margin-top: 20px;">
         <tr>
-            <td><code>name:</code></td>
-            <td>Human-readable description</td>
+            <td><code>- name:</code></td>
+            <td>Human-readable description (shows in output when running)</td>
         </tr>
         <tr>
             <td><code>apt:</code></td>
-            <td>Module to use (package manager)</td>
+            <td>The module to use (apt manages Debian/Ubuntu packages)</td>
         </tr>
         <tr>
             <td><code>name:</code></td>
-            <td>Parameter: package name</td>
+            <td>Module parameter: which package to install</td>
         </tr>
         <tr>
-            <td><code>state:</code></td>
-            <td>Parameter: should be installed (present)</td>
+            <td><code>state: present</code></td>
+            <td>Module parameter: ensure package IS installed</td>
         </tr>
     </table>
 </div>
 
-<!-- Slide 10: Variables -->
+<!-- Slide 12: What is YAML -->
 <div class="slide">
-    <h2>Using Variables</h2>
-    <p>Variables let you reuse values across your playbooks:</p>
-    <pre><code># In group_vars/all.yml
-mysql_root_password: "StudentDemo123!"
-wordpress_db_name: "wordpress"
+    <h2>Understanding YAML Syntax</h2>
+    <p>YAML is a human-readable data format. Key rules:</p>
+    <div class="two-column">
+        <div class="column">
+            <pre><code># Key-value pairs
+name: mysql-server
+state: present
 
-# In a task
-- name: Create database
-  mysql_db:
-    name: "{{ wordpress_db_name }}"
-    ...</code></pre>
-    <div class="tip">
-        <p>Change password in ONE place, updates EVERYWHERE</p>
+# Lists (start with -)
+packages:
+  - nginx
+  - php
+  - mysql
+
+# Nested structures
+apt:
+  name: nginx
+  state: present</code></pre>
+        </div>
+        <div class="column">
+            <div class="warning">
+                <p><strong>Indentation matters!</strong></p>
+                <p class="small">Use spaces, never tabs. 2 spaces per level is standard.</p>
+            </div>
+            <div class="tip" style="margin-top: 20px;">
+                <p class="small">VS Code highlights YAML syntax errors in red. Watch for squiggly lines!</p>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Slide 11: Session 1 Exercise -->
-<div class="slide center">
-    <h2>&#128187; Hands-On Exercise</h2>
-    <h3>Complete the MySQL Role</h3>
-    <p>Open: <code>roles/mysql/tasks/main.yml</code></p>
-    <p style="margin-top: 40px;">Look for the <span class="highlight">STUDENT TODO</span> comments</p>
-    <p>Fill in the missing module calls</p>
-    <p style="margin-top: 40px;">When done, run:</p>
-    <pre><code>ansible-playbook playbook.yml --tags mysql</code></pre>
+<!-- Slide 13: Variables -->
+<div class="slide">
+    <h2>Using Variables</h2>
+    <p>Variables let you define values once and reuse them everywhere:</p>
+    <pre><code># Defined in group_vars/all.yml
+mysql_root_password: "StudentDemo123!"
+wordpress_db_name: "wordpress"
+
+# Used in a task (note the curly braces and quotes)
+- name: Create WordPress database
+  mysql_db:
+    name: "{{ wordpress_db_name }}"
+    login_password: "{{ mysql_root_password }}"</code></pre>
+    <div class="tip">
+        <p><strong>Why variables?</strong> Change the password in one file, and every task using it updates automatically. Essential for maintaining large configurations.</p>
+    </div>
 </div>
 
-<!-- Slide 12: Common Modules -->
+<!-- Slide 14: Common Modules Reference -->
 <div class="slide">
-    <h2>Common Modules You'll Use</h2>
+    <h2>Common Ansible Modules</h2>
     <table>
         <tr>
             <th>Module</th>
             <th>Purpose</th>
+            <th>Example Use</th>
         </tr>
         <tr>
             <td><code>apt</code></td>
             <td>Install/remove packages</td>
+            <td>Install nginx, mysql-server</td>
         </tr>
         <tr>
             <td><code>service</code></td>
             <td>Start/stop/enable services</td>
+            <td>Start mysql, enable on boot</td>
         </tr>
         <tr>
             <td><code>file</code></td>
-            <td>Create directories, set permissions</td>
+            <td>Create files/directories, set permissions</td>
+            <td>Create /var/www/wordpress</td>
         </tr>
         <tr>
             <td><code>template</code></td>
-            <td>Generate config files from templates</td>
+            <td>Copy files with variable substitution</td>
+            <td>Generate wp-config.php</td>
         </tr>
         <tr>
             <td><code>get_url</code></td>
-            <td>Download files from the internet</td>
+            <td>Download files from URLs</td>
+            <td>Download WordPress tarball</td>
         </tr>
         <tr>
             <td><code>mysql_db</code></td>
-            <td>Create MySQL databases</td>
+            <td>Create/manage MySQL databases</td>
+            <td>Create wordpress database</td>
         </tr>
     </table>
 </div>
 
-<!-- Slide 13: YAML Tips -->
-<div class="slide">
-    <h2>YAML Survival Tips</h2>
-    <div class="warning">
-        <p><strong>Indentation matters!</strong> Use spaces, not tabs</p>
-    </div>
-    <pre><code># WRONG - will break!
-- name: Install package
-apt:
-  name: nginx
-
-# CORRECT
-- name: Install package
-  apt:
-    name: nginx</code></pre>
-    <div class="tip">
-        <p>VS Code will highlight YAML errors in red</p>
-    </div>
+<!-- Slide 15: Exercise Intro -->
+<div class="slide center">
+    <h2>Hands-On Exercise: Session 1</h2>
+    <h3>Complete the MySQL Role</h3>
+    <p style="margin-top: 40px;">Open in VS Code: <code>roles/mysql/tasks/main.yml</code></p>
+    <p style="margin-top: 20px;">Look for comments marked <span class="highlight">STUDENT TODO</span></p>
+    <p>Read the hints and fill in the missing Ansible module calls.</p>
+    <p style="margin-top: 40px;">When complete, run:</p>
+    <pre><code>ansible-playbook playbook.yml --tags mysql</code></pre>
 </div>
 
-<!-- Slide 14: Session 1 Verification -->
+<!-- Slide 16: Exercise Tips -->
 <div class="slide">
-    <h2>Verify Session 1 Worked</h2>
-    <p>Check that MySQL is running and the database exists:</p>
+    <h2>Exercise Tips</h2>
+    <div class="two-column">
+        <div class="column">
+            <h3>YAML Gotchas</h3>
+            <ul>
+                <li class="small">Module name aligns under the dash</li>
+                <li class="small">Parameters indent under the module</li>
+                <li class="small">Wrap variables in quotes: <code>"{{ var }}"</code></li>
+                <li class="small">Use spaces, not tabs</li>
+            </ul>
+        </div>
+        <div class="column">
+            <h3>If Something Breaks</h3>
+            <ul>
+                <li class="small">Read the error message carefully</li>
+                <li class="small">Check indentation first</li>
+                <li class="small">Look for missing colons or quotes</li>
+                <li class="small">Ask for help - that's what this is for!</li>
+            </ul>
+        </div>
+    </div>
+    <pre style="margin-top: 30px;"><code># Correct structure:
+- name: Description here
+  module_name:
+    parameter1: value1
+    parameter2: "{{ variable_name }}"</code></pre>
+</div>
+
+<!-- Slide 17: Verify Session 1 -->
+<div class="slide">
+    <h2>Verify: Is MySQL Working?</h2>
+    <p>After running the playbook, verify the database was created:</p>
     <pre><code>ansible database -m shell -a \
   "mysql -u root -pStudentDemo123! -e 'SHOW DATABASES;'"</code></pre>
-    <p>You should see:</p>
+    <p>Expected output:</p>
     <pre><code>+--------------------+
 | Database           |
 +--------------------+
 | information_schema |
 | mysql              |
-| wordpress          |  &#60;-- You created this!
+| performance_schema |
+| sys                |
+| wordpress          |   &lt;-- Your playbook created this!
 +--------------------+</code></pre>
 </div>
 
-<!-- Slide 15: Break / Session 2 Intro -->
-<div class="slide title-slide">
-    <div class="emoji">&#9749;</div>
-    <h1>Session 2</h1>
-    <p class="subtitle">WordPress + Nginx</p>
-    <p>Building on our database foundation</p>
+<!-- Slide 18: Session 1 Recap -->
+<div class="slide">
+    <h2>Session 1 Recap</h2>
+    <p>What we accomplished:</p>
+    <ul>
+        <li><strong>SSH Keys</strong> - Set up passwordless authentication to servers</li>
+        <li><strong>Inventory</strong> - Defined our 3 servers and grouped them by role</li>
+        <li><strong>Connectivity</strong> - Verified Ansible can reach all servers</li>
+        <li><strong>MySQL Role</strong> - Installed database, created user and database for WordPress</li>
+    </ul>
+    <div class="note" style="margin-top: 30px;">
+        <p><strong>Next session:</strong> We'll install WordPress on the app server and configure Nginx as a reverse proxy.</p>
+    </div>
 </div>
 
-<!-- Slide 16: Templates -->
+<!-- Slide 19: Session 2 Intro -->
+<div class="slide title-slide">
+    <h1>Session 2</h1>
+    <p class="subtitle">WordPress + Nginx</p>
+    <p>Building the application and web tiers on top of our database</p>
+</div>
+
+<!-- Slide 20: Templates Explained -->
 <div class="slide">
-    <h2>Templates: Dynamic Configuration</h2>
-    <p>Templates let Ansible fill in configuration files:</p>
-    <pre><code># wp-config.php.j2 (template)
+    <h2>Templates: Dynamic Configuration Files</h2>
+    <p>Templates are files with placeholders that Ansible fills in with variable values:</p>
+    <pre><code># Template file: wp-config.php.j2
 define('DB_HOST', '{{ database_server }}');
 define('DB_NAME', '{{ wordpress_db_name }}');
 define('DB_USER', '{{ wordpress_db_user }}');
 
-# Becomes wp-config.php (actual file)
+# After Ansible processes it, becomes:
 define('DB_HOST', '100.65.6.146');
 define('DB_NAME', 'wordpress');
 define('DB_USER', 'wp_user');</code></pre>
+    <div class="tip">
+        <p>The <code>.j2</code> extension means "Jinja2 template" - the templating language Ansible uses.</p>
+    </div>
 </div>
 
-<!-- Slide 17: Session 2 Exercise -->
-<div class="slide center">
-    <h2>&#128187; Hands-On Exercise</h2>
-    <h3>Complete WordPress + Nginx Roles</h3>
-    <p>Open: <code>roles/wordpress/tasks/main.yml</code></p>
-    <p>Then: <code>roles/nginx/tasks/main.yml</code></p>
-    <p style="margin-top: 40px;">When done, run:</p>
-    <pre><code>ansible-playbook playbook.yml</code></pre>
-    <p style="margin-top: 20px;">Then visit: <code>http://YOUR_WEBSERVER_IP</code></p>
-</div>
-
-<!-- Slide 18: What You Learned -->
+<!-- Slide 21: Reverse Proxy Explained -->
 <div class="slide">
-    <h2>What You Learned</h2>
+    <h2>What is a Reverse Proxy?</h2>
+    <p>Nginx sits in front of WordPress, receiving all requests and forwarding them:</p>
+    <div class="diagram">
+        <pre style="background: transparent; border: none;">
+User Request --> NGINX (port 80) --> WordPress/PHP (port 9000)
+                   |
+                   +-- Handles: SSL, caching, load balancing, security
+        </pre>
+    </div>
+    <p><strong>Benefits:</strong></p>
     <ul>
-        <li><strong>Inventory</strong> - Define servers and groups</li>
-        <li><strong>Playbooks</strong> - Organize automation into plays</li>
-        <li><strong>Roles</strong> - Structure reusable components</li>
-        <li><strong>Modules</strong> - apt, service, file, template, mysql_*</li>
-        <li><strong>Variables</strong> - Centralize configuration</li>
-        <li><strong>Templates</strong> - Generate dynamic config files</li>
+        <li class="small">Security: WordPress never directly exposed to internet</li>
+        <li class="small">Performance: Nginx handles static files efficiently</li>
+        <li class="small">Flexibility: Can add caching, SSL, or multiple backends later</li>
     </ul>
 </div>
 
-<!-- Slide 19: Where to Go Next -->
+<!-- Slide 22: Session 2 Exercise -->
+<div class="slide center">
+    <h2>Hands-On Exercise: Session 2</h2>
+    <h3>Complete WordPress + Nginx Roles</h3>
+    <p style="margin-top: 30px;">First: <code>roles/wordpress/tasks/main.yml</code></p>
+    <p>Then: <code>roles/nginx/tasks/main.yml</code></p>
+    <p style="margin-top: 40px;">When both are complete, deploy everything:</p>
+    <pre><code>ansible-playbook playbook.yml</code></pre>
+    <p style="margin-top: 30px;">Then open in your browser: <code>http://YOUR_WEBSERVER_IP</code></p>
+</div>
+
+<!-- Slide 23: Running the Full Playbook -->
+<div class="slide">
+    <h2>Running the Full Playbook</h2>
+    <pre><code>ansible-playbook playbook.yml</code></pre>
+    <p>What happens:</p>
+    <ul>
+        <li class="small">Ansible reads the playbook and inventory</li>
+        <li class="small">Connects to each server via SSH</li>
+        <li class="small">Executes tasks in order, one server group at a time</li>
+        <li class="small">Reports success (green), changes (yellow), or failures (red)</li>
+    </ul>
+    <div class="tip">
+        <p><strong>Idempotent:</strong> Running the playbook again will only report "ok" - no unnecessary changes.</p>
+    </div>
+</div>
+
+<!-- Slide 24: Troubleshooting -->
+<div class="slide">
+    <h2>Common Issues and Fixes</h2>
+    <table>
+        <tr>
+            <th>Error</th>
+            <th>Likely Cause</th>
+            <th>Fix</th>
+        </tr>
+        <tr>
+            <td class="small">UNREACHABLE</td>
+            <td class="small">SSH connection failed</td>
+            <td class="small">Check IP address, run setup-ssh.sh again</td>
+        </tr>
+        <tr>
+            <td class="small">Syntax error</td>
+            <td class="small">YAML indentation</td>
+            <td class="small">Check spaces, align parameters under module</td>
+        </tr>
+        <tr>
+            <td class="small">Variable undefined</td>
+            <td class="small">Typo in variable name</td>
+            <td class="small">Check spelling matches group_vars/all.yml</td>
+        </tr>
+        <tr>
+            <td class="small">Permission denied</td>
+            <td class="small">Need sudo/become</td>
+            <td class="small">Playbook should have become: yes</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Slide 25: What You Learned -->
+<div class="slide">
+    <h2>What You Learned</h2>
+    <div class="two-column">
+        <div class="column">
+            <h3>Ansible Concepts</h3>
+            <ul>
+                <li class="small"><strong>Inventory</strong> - Server definitions</li>
+                <li class="small"><strong>Playbooks</strong> - Automation scripts</li>
+                <li class="small"><strong>Roles</strong> - Reusable components</li>
+                <li class="small"><strong>Tasks</strong> - Individual actions</li>
+                <li class="small"><strong>Modules</strong> - Built-in tools</li>
+                <li class="small"><strong>Variables</strong> - Reusable values</li>
+                <li class="small"><strong>Templates</strong> - Dynamic files</li>
+            </ul>
+        </div>
+        <div class="column">
+            <h3>Practical Skills</h3>
+            <ul>
+                <li class="small">Writing YAML configuration</li>
+                <li class="small">Using apt, service, file modules</li>
+                <li class="small">Setting up multi-server deployments</li>
+                <li class="small">Database and web server configuration</li>
+                <li class="small">Troubleshooting playbook errors</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 26: Where to Go Next -->
 <div class="slide">
     <h2>Where to Go Next</h2>
     <ul>
-        <li><strong>Ansible Galaxy</strong> - Pre-built roles for everything</li>
-        <li><strong>Handlers</strong> - Trigger actions on changes</li>
-        <li><strong>Conditionals</strong> - Run tasks only when needed</li>
-        <li><strong>Loops</strong> - Iterate over lists</li>
-        <li><strong>Vault</strong> - Encrypt sensitive data</li>
+        <li><strong>Ansible Galaxy</strong> - Community repository of pre-built roles (galaxy.ansible.com)</li>
+        <li><strong>Handlers</strong> - Tasks that only run when notified (e.g., restart service after config change)</li>
+        <li><strong>Conditionals</strong> - Run tasks only when conditions are met (<code>when:</code>)</li>
+        <li><strong>Loops</strong> - Iterate over lists of items (<code>loop:</code>)</li>
+        <li><strong>Ansible Vault</strong> - Encrypt sensitive data like passwords</li>
+        <li><strong>Dynamic Inventory</strong> - Generate inventory from cloud APIs (AWS, Azure, etc.)</li>
     </ul>
-    <p style="margin-top: 40px;">Documentation: <code>docs.ansible.com</code></p>
+    <p style="margin-top: 30px;">Official documentation: <code>docs.ansible.com</code></p>
 </div>
 
-<!-- Slide 20: Summary -->
+<!-- Slide 27: Summary -->
 <div class="slide title-slide">
-    <div class="emoji">&#127881;</div>
-    <h1>Congratulations!</h1>
-    <p class="subtitle">You deployed a multi-tier web application with Ansible</p>
-    <p>Same playbook could deploy to 3 or 300 servers</p>
+    <h1>Workshop Complete</h1>
+    <p class="subtitle">You deployed a production-style web application with Ansible</p>
+    <p>The same playbook that configured 3 servers could configure 300.</p>
+    <p style="margin-top: 40px;" class="small">Infrastructure as Code: version controlled, repeatable, documented.</p>
 </div>
 
 <div class="progress" id="progress"></div>
-<div class="slide-number" id="slideNumber">1 / 20</div>
+<div class="slide-number" id="slideNumber">1 / 27</div>
 
 <div class="nav">
-    <button onclick="prevSlide()">&#8592; Prev</button>
-    <button onclick="nextSlide()">Next &#8594;</button>
+    <button onclick="prevSlide()">&larr; Prev</button>
+    <button onclick="nextSlide()">Next &rarr;</button>
 </div>
 
 <script>
