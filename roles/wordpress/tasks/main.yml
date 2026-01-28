@@ -33,14 +33,16 @@
 
 - name: Install PHP and extensions
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the apt module call below (4 lines)                ║
+  # ║ STUDENT TODO: Replace the fail module below with apt module            ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   apt:                                                                  ║
+  # ║   ansible.builtin.apt:                                                  ║
   # ║     name: "{{ php_packages }}"                                          ║
   # ║     state: present                                                      ║
   # ║     update_cache: yes                                                   ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the apt module to install php_packages"
 
 
 # -----------------------------------------------------------------------------
@@ -50,7 +52,7 @@
 # This is done for you as an example of the 'file' module.
 
 - name: Create WordPress directory
-  file:
+  ansible.builtin.file:
     path: "{{ wordpress_install_dir }}"
     state: directory
     owner: www-data
@@ -70,13 +72,15 @@
 
 - name: Download WordPress
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the get_url module call below (3 lines)            ║
+  # ║ STUDENT TODO: Replace the fail module below with get_url module        ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   get_url:                                                              ║
+  # ║   ansible.builtin.get_url:                                              ║
   # ║     url: "{{ wordpress_download_url }}"                                 ║
   # ║     dest: /tmp/wordpress.tar.gz                                         ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the get_url module"
 
 
 # -----------------------------------------------------------------------------
@@ -94,15 +98,17 @@
 
 - name: Extract WordPress
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the unarchive module call below (5 lines)          ║
+  # ║ STUDENT TODO: Replace the fail module below with unarchive module      ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   unarchive:                                                            ║
+  # ║   ansible.builtin.unarchive:                                            ║
   # ║     src: /tmp/wordpress.tar.gz                                          ║
   # ║     dest: "{{ wordpress_install_dir }}"                                 ║
   # ║     remote_src: yes                                                     ║
   # ║     extra_opts: ["--strip-components=1"]                                ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the unarchive module"
 
 
 # -----------------------------------------------------------------------------
@@ -121,15 +127,17 @@
 
 - name: Configure WordPress
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the template module call below (5 lines)           ║
+  # ║ STUDENT TODO: Replace the fail module below with template module       ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   template:                                                             ║
+  # ║   ansible.builtin.template:                                             ║
   # ║     src: wp-config.php.j2                                               ║
   # ║     dest: "{{ wordpress_install_dir }}/wp-config.php"                   ║
   # ║     owner: www-data                                                     ║
   # ║     group: www-data                                                     ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the template module"
 
 
 # -----------------------------------------------------------------------------
@@ -147,15 +155,17 @@
 
 - name: Set WordPress file ownership
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the file module call below (5 lines)               ║
+  # ║ STUDENT TODO: Replace the fail module below with file module           ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   file:                                                                 ║
+  # ║   ansible.builtin.file:                                                 ║
   # ║     path: "{{ wordpress_install_dir }}"                                 ║
   # ║     owner: www-data                                                     ║
   # ║     group: www-data                                                     ║
   # ║     recurse: yes                                                        ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the file module"
 
 
 # -----------------------------------------------------------------------------
@@ -165,14 +175,14 @@
 # This is done for you - it's more advanced configuration.
 
 - name: Configure PHP-FPM to listen on all interfaces
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/php/8.3/fpm/pool.d/www.conf
     regexp: '^listen = '
     line: 'listen = 0.0.0.0:9000'
   notify: Restart PHP-FPM
 
 - name: Ensure PHP-FPM is running
-  service:
+  ansible.builtin.service:
     name: php8.3-fpm
     state: started
-    enabled: yes
+    enabled: true

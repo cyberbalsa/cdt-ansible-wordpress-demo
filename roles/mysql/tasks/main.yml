@@ -31,14 +31,16 @@
 
 - name: Install MySQL server
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the apt module call below (3 lines)                ║
+  # ║ STUDENT TODO: Replace the fail module below with apt module (3 lines)  ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   apt:                                                                  ║
+  # ║   ansible.builtin.apt:                                                  ║
   # ║     name: package-name-here                                             ║
   # ║     state: present                                                      ║
   # ║     update_cache: yes                                                   ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the apt module to install mysql-server"
 
 
 # -----------------------------------------------------------------------------
@@ -48,7 +50,7 @@
 # This is already done for you as an example!
 
 - name: Install Python MySQL library (required for Ansible)
-  apt:
+  ansible.builtin.apt:
     name: python3-pymysql
     state: present
 
@@ -68,14 +70,16 @@
 
 - name: Start and enable MySQL service
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the service module call below (4 lines)            ║
+  # ║ STUDENT TODO: Replace the fail module below with service module        ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   service:                                                              ║
+  # ║   ansible.builtin.service:                                              ║
   # ║     name: service-name-here                                             ║
   # ║     state: started                                                      ║
-  # ║     enabled: yes                                                        ║
+  # ║     enabled: true                                                       ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the service module to start mysql"
 
 
 # -----------------------------------------------------------------------------
@@ -92,15 +96,20 @@
 
 - name: Set MySQL root password
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the mysql_user module call below (5 lines)         ║
+  # ║ STUDENT TODO: Replace the fail module below with mysql_user module     ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   mysql_user:                                                           ║
+  # ║   community.mysql.mysql_user:                                           ║
   # ║     name: root                                                          ║
   # ║     password: "{{ mysql_root_password }}"                               ║
   # ║     login_unix_socket: /var/run/mysqld/mysqld.sock                      ║
   # ║     state: present                                                      ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  community.mysql.mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    state: present
 
 
 # -----------------------------------------------------------------------------
@@ -119,16 +128,18 @@
 
 - name: Create WordPress database
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the mysql_db module call below (6 lines)           ║
+  # ║ STUDENT TODO: Replace the fail module below with mysql_db module       ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   mysql_db:                                                             ║
+  # ║   community.mysql.mysql_db:                                             ║
   # ║     name: "{{ wordpress_db_name }}"                                     ║
   # ║     state: present                                                      ║
   # ║     login_user: root                                                    ║
   # ║     login_password: "{{ mysql_root_password }}"                         ║
   # ║     login_unix_socket: /var/run/mysqld/mysqld.sock                      ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the mysql_db module"
 
 
 # -----------------------------------------------------------------------------
@@ -149,10 +160,10 @@
 
 - name: Create WordPress database user
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the mysql_user module call below (8 lines)         ║
+  # ║ STUDENT TODO: Replace the fail module below with mysql_user module     ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   mysql_user:                                                           ║
+  # ║   community.mysql.mysql_user:                                           ║
   # ║     name: "{{ wordpress_db_user }}"                                     ║
   # ║     password: "{{ wordpress_db_password }}"                             ║
   # ║     priv: "{{ wordpress_db_name }}.*:ALL"                               ║
@@ -162,6 +173,8 @@
   # ║     login_password: "{{ mysql_root_password }}"                         ║
   # ║     login_unix_socket: /var/run/mysqld/mysqld.sock                      ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the mysql_user module"
 
 
 # -----------------------------------------------------------------------------
@@ -173,7 +186,7 @@
 # This one is done for you - it's more advanced (uses lineinfile module)
 
 - name: Configure MySQL to accept remote connections
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/mysql/mysql.conf.d/mysqld.cnf
     regexp: '^bind-address'
     line: 'bind-address = 0.0.0.0'

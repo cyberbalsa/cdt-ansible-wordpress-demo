@@ -30,14 +30,16 @@
 
 - name: Install Nginx
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the apt module call below (4 lines)                ║
+  # ║ STUDENT TODO: Replace the fail module below with apt module            ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   apt:                                                                  ║
+  # ║   ansible.builtin.apt:                                                  ║
   # ║     name: nginx                                                         ║
   # ║     state: present                                                      ║
   # ║     update_cache: yes                                                   ║
   # ╚════════════════════════════════════════════════════════════════════════╝
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the apt module to install nginx"
 
 
 # -----------------------------------------------------------------------------
@@ -54,14 +56,15 @@
 
 - name: Deploy Nginx site configuration
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the template module call below (3 lines)           ║
+  # ║ STUDENT TODO: Replace the fail module below with template module       ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   template:                                                             ║
+  # ║   ansible.builtin.template:                                             ║
   # ║     src: wordpress.conf.j2                                              ║
   # ║     dest: /etc/nginx/sites-available/wordpress                          ║
   # ╚════════════════════════════════════════════════════════════════════════╝
-
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the template module"
   notify: Restart Nginx
 
 # -----------------------------------------------------------------------------
@@ -79,15 +82,16 @@
 
 - name: Enable WordPress site
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the file module call below (4 lines)               ║
+  # ║ STUDENT TODO: Replace the fail module below with file module           ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   file:                                                                 ║
+  # ║   ansible.builtin.file:                                                 ║
   # ║     src: /etc/nginx/sites-available/wordpress                           ║
   # ║     dest: /etc/nginx/sites-enabled/wordpress                            ║
   # ║     state: link                                                         ║
   # ╚════════════════════════════════════════════════════════════════════════╝
-
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the file module"
   notify: Restart Nginx
 
 # -----------------------------------------------------------------------------
@@ -97,7 +101,7 @@
 # This is done for you - note the state: absent to DELETE a file.
 
 - name: Remove default Nginx site
-  file:
+  ansible.builtin.file:
     path: /etc/nginx/sites-enabled/default
     state: absent
   notify: Restart Nginx
@@ -116,12 +120,13 @@
 
 - name: Ensure Nginx is running
   # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Write the service module call below (4 lines)            ║
+  # ║ STUDENT TODO: Replace the fail module below with service module        ║
   # ║                                                                         ║
   # ║ Example format:                                                         ║
-  # ║   service:                                                              ║
+  # ║   ansible.builtin.service:                                              ║
   # ║     name: nginx                                                         ║
   # ║     state: started                                                      ║
-  # ║     enabled: yes                                                        ║
+  # ║     enabled: true                                                       ║
   # ╚════════════════════════════════════════════════════════════════════════╝
-
+  ansible.builtin.fail:
+    msg: "STUDENT TODO: Replace this fail module with the service module"
