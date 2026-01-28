@@ -1,0 +1,59 @@
+---
+# =============================================================================
+# SOLUTION: WordPress Role Tasks
+# =============================================================================
+# This is the complete, working version for instructor reference.
+# =============================================================================
+
+- name: Install PHP and extensions
+  apt:
+    name: "{{ php_packages }}"
+    state: present
+    update_cache: yes
+
+- name: Create WordPress directory
+  file:
+    path: "{{ wordpress_install_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Download WordPress
+  get_url:
+    url: "{{ wordpress_download_url }}"
+    dest: /tmp/wordpress.tar.gz
+
+- name: Extract WordPress
+  unarchive:
+    src: /tmp/wordpress.tar.gz
+    dest: "{{ wordpress_install_dir }}"
+    remote_src: yes
+    extra_opts: ["--strip-components=1"]
+
+- name: Configure WordPress
+  template:
+    src: wp-config.php.j2
+    dest: "{{ wordpress_install_dir }}/wp-config.php"
+    owner: www-data
+    group: www-data
+
+- name: Set WordPress file ownership
+  file:
+    path: "{{ wordpress_install_dir }}"
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: Configure PHP-FPM to listen on all interfaces
+  lineinfile:
+    path: /etc/php/8.3/fpm/pool.d/www.conf
+    regexp: '^listen = '
+    line: 'listen = 0.0.0.0:9000'
+  notify: Restart PHP-FPM
+
+- name: Ensure PHP-FPM is running
+  service:
+    name: php8.3-fpm
+    state: started
+    enabled: yes

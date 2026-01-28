@@ -1,0 +1,73 @@
+---
+# =============================================================================
+# SHARED VARIABLES FOR ALL SERVERS
+# =============================================================================
+# Variables defined here are available to ALL playbooks and roles.
+# This is where we put configuration that multiple roles need to share.
+#
+# WHY USE VARIABLES?
+# - Change a password once, it updates everywhere
+# - Makes playbooks reusable for different environments
+# - Keeps sensitive data separate from logic
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+
+# MySQL root password (set during MySQL installation)
+mysql_root_password: "StudentDemo123!"
+
+# WordPress database settings
+wordpress_db_name: "wordpress"
+wordpress_db_user: "wp_user"
+wordpress_db_password: "WPDemo456!"
+
+# =============================================================================
+# WORDPRESS CONFIGURATION
+# =============================================================================
+
+# Site settings
+wordpress_site_title: "My Ansible Demo Site"
+wordpress_admin_user: "admin"
+wordpress_admin_password: "DemoAdmin789!"
+wordpress_admin_email: "admin@example.com"
+
+# WordPress version to download
+wordpress_version: "latest"
+wordpress_download_url: "https://wordpress.org/latest.tar.gz"
+
+# Where to install WordPress on the server
+wordpress_install_dir: "/var/www/wordpress"
+
+# =============================================================================
+# SERVER REFERENCES
+# =============================================================================
+# These variables let roles find each other across servers.
+# We use hostvars to look up the IP address from our inventory.
+
+# Database server IP (MySQL listens here)
+database_server: "{{ hostvars['fffics-srv-2']['ansible_host'] }}"
+
+# WordPress server IP (PHP application runs here)
+wordpress_server: "{{ hostvars['fffics-srv-3']['ansible_host'] }}"
+
+# Web server IP (Nginx reverse proxy)
+webserver_ip: "{{ hostvars['fffics-srv-4']['ansible_host'] }}"
+
+# =============================================================================
+# PHP CONFIGURATION
+# =============================================================================
+
+# PHP packages needed for WordPress
+php_packages:
+  - php
+  - php-fpm
+  - php-mysql
+  - php-curl
+  - php-gd
+  - php-mbstring
+  - php-xml
+  - php-xmlrpc
+  - php-soap
+  - php-intl
+  - php-zip

@@ -1,0 +1,186 @@
+---
+# =============================================================================
+# MySQL Database Server Setup
+# =============================================================================
+# This role installs MySQL and creates a database for WordPress.
+#
+# After completing this role, you will have:
+# - MySQL server installed and running
+# - A database named "wordpress"
+# - A user that WordPress can use to connect
+#
+# VARIABLES AVAILABLE TO YOU:
+# - {{ mysql_root_password }}    - Password for MySQL root user
+# - {{ wordpress_db_name }}      - Name of the database to create
+# - {{ wordpress_db_user }}      - Username for WordPress
+# - {{ wordpress_db_password }}  - Password for WordPress user
+# - {{ wordpress_server }}       - IP address of the WordPress server
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# TASK 1: Install MySQL Server
+# -----------------------------------------------------------------------------
+# We need to install the MySQL database software.
+#
+# HINT: Use the 'apt' module
+# - name: what package to install (mysql-server)
+# - state: should it be "present" (installed) or "absent" (removed)?
+# - update_cache: yes (refreshes package list first)
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
+
+- name: Install MySQL server
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the apt module call below (3 lines)                ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   apt:                                                                  ║
+  # ║     name: package-name-here                                             ║
+  # ║     state: present                                                      ║
+  # ║     update_cache: yes                                                   ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+
+# -----------------------------------------------------------------------------
+# TASK 2: Install Python MySQL library
+# -----------------------------------------------------------------------------
+# Ansible needs a Python library to talk to MySQL.
+# This is already done for you as an example!
+
+- name: Install Python MySQL library (required for Ansible)
+  apt:
+    name: python3-pymysql
+    state: present
+
+# -----------------------------------------------------------------------------
+# TASK 3: Start and Enable MySQL Service
+# -----------------------------------------------------------------------------
+# After installing, we need to:
+# 1. START the service (so it runs now)
+# 2. ENABLE it (so it starts automatically after reboot)
+#
+# HINT: Use the 'service' module
+# - name: the service name (mysql)
+# - state: should be "started"
+# - enabled: yes (start on boot)
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/service_module.html
+
+- name: Start and enable MySQL service
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the service module call below (4 lines)            ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   service:                                                              ║
+  # ║     name: service-name-here                                             ║
+  # ║     state: started                                                      ║
+  # ║     enabled: yes                                                        ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+
+# -----------------------------------------------------------------------------
+# TASK 4: Set MySQL Root Password
+# -----------------------------------------------------------------------------
+# For security, we need to set a password for the MySQL root user.
+#
+# HINT: Use the 'mysql_user' module
+# - name: the username (root)
+# - password: use the variable {{ mysql_root_password }}
+# - login_unix_socket: /var/run/mysqld/mysqld.sock (how to connect)
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/community/mysql/mysql_user_module.html
+
+- name: Set MySQL root password
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the mysql_user module call below (5 lines)         ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   mysql_user:                                                           ║
+  # ║     name: root                                                          ║
+  # ║     password: "{{ mysql_root_password }}"                               ║
+  # ║     login_unix_socket: /var/run/mysqld/mysqld.sock                      ║
+  # ║     state: present                                                      ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+
+# -----------------------------------------------------------------------------
+# TASK 5: Create WordPress Database
+# -----------------------------------------------------------------------------
+# WordPress needs a database to store posts, users, settings, etc.
+#
+# HINT: Use the 'mysql_db' module
+# - name: the database name (use variable!)
+# - state: present
+# - login_user: root
+# - login_password: use the variable
+# - login_unix_socket: /var/run/mysqld/mysqld.sock
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/community/mysql/mysql_db_module.html
+
+- name: Create WordPress database
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the mysql_db module call below (6 lines)           ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   mysql_db:                                                             ║
+  # ║     name: "{{ wordpress_db_name }}"                                     ║
+  # ║     state: present                                                      ║
+  # ║     login_user: root                                                    ║
+  # ║     login_password: "{{ mysql_root_password }}"                         ║
+  # ║     login_unix_socket: /var/run/mysqld/mysqld.sock                      ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+
+# -----------------------------------------------------------------------------
+# TASK 6: Create WordPress Database User
+# -----------------------------------------------------------------------------
+# WordPress needs its own user to connect to the database.
+# We grant this user access ONLY to the wordpress database.
+# We also allow connections from the WordPress server's IP.
+#
+# HINT: Use the 'mysql_user' module
+# - name: the username (use variable!)
+# - password: use the variable
+# - priv: "{{ wordpress_db_name }}.*:ALL" (all permissions on wordpress db)
+# - host: "{{ wordpress_server }}" (allow connections from WordPress server)
+# - login_user, login_password, login_unix_socket: same as before
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/community/mysql/mysql_user_module.html
+
+- name: Create WordPress database user
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the mysql_user module call below (8 lines)         ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   mysql_user:                                                           ║
+  # ║     name: "{{ wordpress_db_user }}"                                     ║
+  # ║     password: "{{ wordpress_db_password }}"                             ║
+  # ║     priv: "{{ wordpress_db_name }}.*:ALL"                               ║
+  # ║     host: "{{ wordpress_server }}"                                      ║
+  # ║     state: present                                                      ║
+  # ║     login_user: root                                                    ║
+  # ║     login_password: "{{ mysql_root_password }}"                         ║
+  # ║     login_unix_socket: /var/run/mysqld/mysqld.sock                      ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+
+# -----------------------------------------------------------------------------
+# TASK 7: Configure MySQL to accept remote connections
+# -----------------------------------------------------------------------------
+# By default, MySQL only accepts connections from localhost.
+# We need to change the bind-address so WordPress can connect.
+#
+# This one is done for you - it's more advanced (uses lineinfile module)
+
+- name: Configure MySQL to accept remote connections
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address'
+    line: 'bind-address = 0.0.0.0'
+  notify: Restart MySQL
+
+# -----------------------------------------------------------------------------
+# HANDLER: Restart MySQL
+# -----------------------------------------------------------------------------
+# Handlers run ONLY when notified by a task.
+# This restarts MySQL when the config changes.

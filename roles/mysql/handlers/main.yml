@@ -1,0 +1,11 @@
+---
+# =============================================================================
+# MySQL Handlers
+# =============================================================================
+# Handlers are special tasks that only run when "notified" by another task.
+# This is useful for restarting services only when configuration changes.
+
+- name: Restart MySQL
+  service:
+    name: mysql
+    state: restarted

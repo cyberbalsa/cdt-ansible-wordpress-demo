@@ -1,0 +1,60 @@
+---
+# =============================================================================
+# Main Playbook - WordPress Multi-Server Deployment
+# =============================================================================
+#
+# This playbook deploys a 3-tier WordPress stack:
+#
+#   [Web Server]  -->  [WordPress Server]  -->  [Database Server]
+#     (Nginx)            (PHP + WP)              (MySQL)
+#
+# Each "play" targets a different group of servers from our inventory.
+#
+# TO RUN THIS PLAYBOOK:
+#   ansible-playbook playbook.yml
+#
+# TO RUN JUST ONE ROLE (for testing):
+#   ansible-playbook playbook.yml --tags mysql
+#   ansible-playbook playbook.yml --tags wordpress
+#   ansible-playbook playbook.yml --tags nginx
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# PLAY 1: Set up MySQL Database Server
+# -----------------------------------------------------------------------------
+# This runs on servers in the [database] group (fffics-srv-2)
+
+- name: Configure Database Server
+  hosts: database
+  become: yes  # Run as root (sudo)
+  tags: mysql
+
+  roles:
+    - mysql
+
+# -----------------------------------------------------------------------------
+# PLAY 2: Set up WordPress Application Server
+# -----------------------------------------------------------------------------
+# This runs on servers in the [wordpress] group (fffics-srv-3)
+
+- name: Configure WordPress Server
+  hosts: wordpress
+  become: yes
+  tags: wordpress
+
+  roles:
+    - wordpress
+
+# -----------------------------------------------------------------------------
+# PLAY 3: Set up Nginx Web Server
+# -----------------------------------------------------------------------------
+# This runs on servers in the [webserver] group (fffics-srv-4)
+
+- name: Configure Web Server
+  hosts: webserver
+  become: yes
+  tags: nginx
+
+  roles:
+    - nginx

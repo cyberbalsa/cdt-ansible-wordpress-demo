@@ -1,0 +1,62 @@
+# =============================================================================
+# Nginx Configuration for WordPress
+# =============================================================================
+# This configuration sets up Nginx as a reverse proxy.
+#
+# Traffic flow:
+#   User -> Nginx (this server) -> PHP-FPM on WordPress server -> MySQL
+#
+# Notice the {{ variables }} - Ansible fills these in!
+# =============================================================================
+
+server {
+    # Listen on port 80 (HTTP)
+    listen 80;
+    listen [::]:80;
+
+    # Server name (accept any hostname for this demo)
+    server_name _;
+
+    # Document root (WordPress files - for static content)
+    # Note: In a real setup, static files would be served locally
+    # For this demo, we pass everything to PHP-FPM
+
+    # Logging
+    access_log /var/log/nginx/wordpress_access.log;
+    error_log /var/log/nginx/wordpress_error.log;
+
+    # Root location - proxy everything to WordPress server
+    location / {
+        # Forward requests to the WordPress server's PHP-FPM
+        fastcgi_pass {{ wordpress_server }}:9000;
+
+        # FastCGI parameters
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME {{ wordpress_install_dir }}$fastcgi_script_name;
+        include fastcgi_params;
+
+        # Pass the original host header
+        fastcgi_param HTTP_HOST $host;
+
+        # Try to serve the request, fall back to index.php for pretty URLs
+        fastcgi_param REQUEST_URI $request_uri;
+    }
+
+    # Handle PHP files
+    location ~ \.php$ {
+        fastcgi_pass {{ wordpress_server }}:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME {{ wordpress_install_dir }}$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+    }
+
+    # Deny access to wp-config.php
+    location ~* wp-config.php {
+        deny all;
+    }
+}

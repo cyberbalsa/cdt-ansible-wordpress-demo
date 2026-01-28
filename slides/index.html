@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ansible Workshop - WordPress Deployment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            overflow: hidden;
+        }
+
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            padding: 60px;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            color: #00d4ff;
+        }
+
+        h2 {
+            font-size: 2.8em;
+            margin-bottom: 40px;
+            color: #00d4ff;
+        }
+
+        h3 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+
+        p, li {
+            font-size: 1.8em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            margin-left: 60px;
+        }
+
+        li {
+            margin-bottom: 15px;
+        }
+
+        code {
+            background: #16213e;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #00ff88;
+        }
+
+        pre {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 10px;
+            font-size: 1.3em;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #00d4ff;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .highlight {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .center {
+            text-align: center;
+            align-items: center;
+        }
+
+        .diagram {
+            font-family: 'Consolas', monospace;
+            font-size: 1.4em;
+            background: #16213e;
+            padding: 40px;
+            border-radius: 10px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .two-column {
+            display: flex;
+            gap: 60px;
+        }
+
+        .column {
+            flex: 1;
+        }
+
+        .nav {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background: #00d4ff;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .nav button:hover {
+            background: #00a8cc;
+        }
+
+        .progress {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: #00d4ff;
+            transition: width 0.3s;
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 35px;
+            left: 30px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .title-slide {
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .title-slide h1 {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 2em;
+            color: #888;
+            margin-bottom: 60px;
+        }
+
+        .emoji {
+            font-size: 3em;
+            margin-bottom: 30px;
+        }
+
+        .warning {
+            background: #ff6b6b22;
+            border-left: 4px solid #ff6b6b;
+            padding: 20px 30px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .tip {
+            background: #00ff8822;
+            border-left: 4px solid #00ff88;
+            padding: 20px 30px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.3em;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background: #16213e;
+            color: #00d4ff;
+        }
+
+        .small {
+            font-size: 0.8em;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<div class="slide title-slide active">
+    <div class="emoji">&#9881;&#65039;</div>
+    <h1>Ansible Workshop</h1>
+    <p class="subtitle">Automating Infrastructure with Code</p>
+    <p>Deploy WordPress across 3 servers - hands on!</p>
+</div>
+
+<!-- Slide 2: What We're Building -->
+<div class="slide">
+    <h2>What We're Building Today</h2>
+    <div class="diagram">
+        <pre style="background: transparent; border: none; text-align: center;">
+&#127760; Users
+    |
+    v
++------------------+        +------------------+        +------------------+
+|   Web Server     |   -->  |    WordPress     |   -->  |    Database      |
+|     (Nginx)      |        |   (PHP + WP)     |        |     (MySQL)      |
+|   fffics-srv-4   |        |   fffics-srv-3   |        |   fffics-srv-2   |
++------------------+        +------------------+        +------------------+
+        </pre>
+    </div>
+    <p>3 servers, 3 roles, 1 playbook - fully automated!</p>
+</div>
+
+<!-- Slide 3: Why Ansible? -->
+<div class="slide">
+    <h2>Why Ansible?</h2>
+    <ul>
+        <li><span class="highlight">Agentless</span> - No software to install on servers</li>
+        <li><span class="highlight">SSH-based</span> - Uses what you already have</li>
+        <li><span class="highlight">Human-readable</span> - YAML configuration</li>
+        <li><span class="highlight">Idempotent</span> - Safe to run multiple times</li>
+    </ul>
+    <div class="tip">
+        <p>"Automate the boring stuff so you can focus on the interesting stuff"</p>
+    </div>
+</div>
+
+<!-- Slide 4: Manual vs Ansible -->
+<div class="slide">
+    <h2>Manual Setup vs Ansible</h2>
+    <div class="two-column">
+        <div class="column">
+            <h3>Manual (old way)</h3>
+            <ul>
+                <li>SSH into server 1...</li>
+                <li>Run 20 commands...</li>
+                <li>SSH into server 2...</li>
+                <li>Run 20 more commands...</li>
+                <li>SSH into server 3...</li>
+                <li>Hope you didn't typo anything</li>
+            </ul>
+        </div>
+        <div class="column">
+            <h3>Ansible (new way)</h3>
+            <pre><code>ansible-playbook playbook.yml</code></pre>
+            <p style="margin-top: 40px;">&#9989; One command</p>
+            <p>&#9989; Repeatable</p>
+            <p>&#9989; Documented</p>
+            <p>&#9989; Version controlled</p>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 5: Key Concepts -->
+<div class="slide">
+    <h2>Ansible Key Concepts</h2>
+    <table>
+        <tr>
+            <th>Concept</th>
+            <th>What it is</th>
+        </tr>
+        <tr>
+            <td><code>inventory</code></td>
+            <td>List of servers and how to group them</td>
+        </tr>
+        <tr>
+            <td><code>playbook</code></td>
+            <td>YAML file describing what to do</td>
+        </tr>
+        <tr>
+            <td><code>role</code></td>
+            <td>Reusable collection of tasks</td>
+        </tr>
+        <tr>
+            <td><code>task</code></td>
+            <td>Single action (install package, start service)</td>
+        </tr>
+        <tr>
+            <td><code>module</code></td>
+            <td>Built-in tool for common operations</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Slide 6: Inventory File -->
+<div class="slide">
+    <h2>The Inventory File</h2>
+    <p>Tells Ansible about your servers:</p>
+    <pre><code>[webserver]
+fffics-srv-4 ansible_host=100.65.5.241
+
+[wordpress]
+fffics-srv-3 ansible_host=100.65.4.183
+
+[database]
+fffics-srv-2 ansible_host=100.65.6.146
+
+[all:vars]
+ansible_user=cyberrange</code></pre>
+    <p class="small">Groups in [brackets], variables after hostnames</p>
+</div>
+
+<!-- Slide 7: Step 1 - SSH Setup -->
+<div class="slide">
+    <h2>Step 1: SSH Setup</h2>
+    <p>First, let's set up SSH keys so Ansible can connect:</p>
+    <pre><code>./setup-ssh.sh</code></pre>
+    <p>This will:</p>
+    <ul>
+        <li>Generate an SSH key (if needed)</li>
+        <li>Copy your key to all 3 servers</li>
+        <li>Test the connections</li>
+    </ul>
+    <div class="warning">
+        <p>Update the IPs in <code>inventory.ini</code> first!</p>
+    </div>
+</div>
+
+<!-- Slide 8: First Command -->
+<div class="slide">
+    <h2>Your First Ansible Command</h2>
+    <p>Test that Ansible can reach all servers:</p>
+    <pre><code>ansible all -m ping</code></pre>
+    <p>Expected output:</p>
+    <pre style="color: #00ff88;"><code>fffics-srv-2 | SUCCESS => { "ping": "pong" }
+fffics-srv-3 | SUCCESS => { "ping": "pong" }
+fffics-srv-4 | SUCCESS => { "ping": "pong" }</code></pre>
+    <div class="tip">
+        <p>Green = good! Red = check your inventory and SSH setup</p>
+    </div>
+</div>
+
+<!-- Slide 9: Anatomy of a Task -->
+<div class="slide">
+    <h2>Anatomy of a Task</h2>
+    <pre><code>- name: Install MySQL server
+  apt:
+    name: mysql-server
+    state: present
+    update_cache: yes</code></pre>
+    <table>
+        <tr>
+            <td><code>name:</code></td>
+            <td>Human-readable description</td>
+        </tr>
+        <tr>
+            <td><code>apt:</code></td>
+            <td>Module to use (package manager)</td>
+        </tr>
+        <tr>
+            <td><code>name:</code></td>
+            <td>Parameter: package name</td>
+        </tr>
+        <tr>
+            <td><code>state:</code></td>
+            <td>Parameter: should be installed (present)</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Slide 10: Variables -->
+<div class="slide">
+    <h2>Using Variables</h2>
+    <p>Variables let you reuse values across your playbooks:</p>
+    <pre><code># In group_vars/all.yml
+mysql_root_password: "StudentDemo123!"
+wordpress_db_name: "wordpress"
+
+# In a task
+- name: Create database
+  mysql_db:
+    name: "{{ wordpress_db_name }}"
+    ...</code></pre>
+    <div class="tip">
+        <p>Change password in ONE place, updates EVERYWHERE</p>
+    </div>
+</div>
+
+<!-- Slide 11: Session 1 Exercise -->
+<div class="slide center">
+    <h2>&#128187; Hands-On Exercise</h2>
+    <h3>Complete the MySQL Role</h3>
+    <p>Open: <code>roles/mysql/tasks/main.yml</code></p>
+    <p style="margin-top: 40px;">Look for the <span class="highlight">STUDENT TODO</span> comments</p>
+    <p>Fill in the missing module calls</p>
+    <p style="margin-top: 40px;">When done, run:</p>
+    <pre><code>ansible-playbook playbook.yml --tags mysql</code></pre>
+</div>
+
+<!-- Slide 12: Common Modules -->
+<div class="slide">
+    <h2>Common Modules You'll Use</h2>
+    <table>
+        <tr>
+            <th>Module</th>
+            <th>Purpose</th>
+        </tr>
+        <tr>
+            <td><code>apt</code></td>
+            <td>Install/remove packages</td>
+        </tr>
+        <tr>
+            <td><code>service</code></td>
+            <td>Start/stop/enable services</td>
+        </tr>
+        <tr>
+            <td><code>file</code></td>
+            <td>Create directories, set permissions</td>
+        </tr>
+        <tr>
+            <td><code>template</code></td>
+            <td>Generate config files from templates</td>
+        </tr>
+        <tr>
+            <td><code>get_url</code></td>
+            <td>Download files from the internet</td>
+        </tr>
+        <tr>
+            <td><code>mysql_db</code></td>
+            <td>Create MySQL databases</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Slide 13: YAML Tips -->
+<div class="slide">
+    <h2>YAML Survival Tips</h2>
+    <div class="warning">
+        <p><strong>Indentation matters!</strong> Use spaces, not tabs</p>
+    </div>
+    <pre><code># WRONG - will break!
+- name: Install package
+apt:
+  name: nginx
+
+# CORRECT
+- name: Install package
+  apt:
+    name: nginx</code></pre>
+    <div class="tip">
+        <p>VS Code will highlight YAML errors in red</p>
+    </div>
+</div>
+
+<!-- Slide 14: Session 1 Verification -->
+<div class="slide">
+    <h2>Verify Session 1 Worked</h2>
+    <p>Check that MySQL is running and the database exists:</p>
+    <pre><code>ansible database -m shell -a \
+  "mysql -u root -pStudentDemo123! -e 'SHOW DATABASES;'"</code></pre>
+    <p>You should see:</p>
+    <pre><code>+--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| wordpress          |  &#60;-- You created this!
++--------------------+</code></pre>
+</div>
+
+<!-- Slide 15: Break / Session 2 Intro -->
+<div class="slide title-slide">
+    <div class="emoji">&#9749;</div>
+    <h1>Session 2</h1>
+    <p class="subtitle">WordPress + Nginx</p>
+    <p>Building on our database foundation</p>
+</div>
+
+<!-- Slide 16: Templates -->
+<div class="slide">
+    <h2>Templates: Dynamic Configuration</h2>
+    <p>Templates let Ansible fill in configuration files:</p>
+    <pre><code># wp-config.php.j2 (template)
+define('DB_HOST', '{{ database_server }}');
+define('DB_NAME', '{{ wordpress_db_name }}');
+define('DB_USER', '{{ wordpress_db_user }}');
+
+# Becomes wp-config.php (actual file)
+define('DB_HOST', '100.65.6.146');
+define('DB_NAME', 'wordpress');
+define('DB_USER', 'wp_user');</code></pre>
+</div>
+
+<!-- Slide 17: Session 2 Exercise -->
+<div class="slide center">
+    <h2>&#128187; Hands-On Exercise</h2>
+    <h3>Complete WordPress + Nginx Roles</h3>
+    <p>Open: <code>roles/wordpress/tasks/main.yml</code></p>
+    <p>Then: <code>roles/nginx/tasks/main.yml</code></p>
+    <p style="margin-top: 40px;">When done, run:</p>
+    <pre><code>ansible-playbook playbook.yml</code></pre>
+    <p style="margin-top: 20px;">Then visit: <code>http://YOUR_WEBSERVER_IP</code></p>
+</div>
+
+<!-- Slide 18: What You Learned -->
+<div class="slide">
+    <h2>What You Learned</h2>
+    <ul>
+        <li><strong>Inventory</strong> - Define servers and groups</li>
+        <li><strong>Playbooks</strong> - Organize automation into plays</li>
+        <li><strong>Roles</strong> - Structure reusable components</li>
+        <li><strong>Modules</strong> - apt, service, file, template, mysql_*</li>
+        <li><strong>Variables</strong> - Centralize configuration</li>
+        <li><strong>Templates</strong> - Generate dynamic config files</li>
+    </ul>
+</div>
+
+<!-- Slide 19: Where to Go Next -->
+<div class="slide">
+    <h2>Where to Go Next</h2>
+    <ul>
+        <li><strong>Ansible Galaxy</strong> - Pre-built roles for everything</li>
+        <li><strong>Handlers</strong> - Trigger actions on changes</li>
+        <li><strong>Conditionals</strong> - Run tasks only when needed</li>
+        <li><strong>Loops</strong> - Iterate over lists</li>
+        <li><strong>Vault</strong> - Encrypt sensitive data</li>
+    </ul>
+    <p style="margin-top: 40px;">Documentation: <code>docs.ansible.com</code></p>
+</div>
+
+<!-- Slide 20: Summary -->
+<div class="slide title-slide">
+    <div class="emoji">&#127881;</div>
+    <h1>Congratulations!</h1>
+    <p class="subtitle">You deployed a multi-tier web application with Ansible</p>
+    <p>Same playbook could deploy to 3 or 300 servers</p>
+</div>
+
+<div class="progress" id="progress"></div>
+<div class="slide-number" id="slideNumber">1 / 20</div>
+
+<div class="nav">
+    <button onclick="prevSlide()">&#8592; Prev</button>
+    <button onclick="nextSlide()">Next &#8594;</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    function showSlide(n) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (n + totalSlides) % totalSlides;
+        slides[currentSlide].classList.add('active');
+        document.getElementById('progress').style.width =
+            ((currentSlide + 1) / totalSlides * 100) + '%';
+        document.getElementById('slideNumber').textContent =
+            (currentSlide + 1) + ' / ' + totalSlides;
+    }
+
+    function nextSlide() {
+        showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+        showSlide(currentSlide - 1);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+        if (e.key === 'ArrowLeft') prevSlide();
+    });
+
+    // Touch support for mobile
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+    });
+    document.addEventListener('touchend', (e) => {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (diff > 50) nextSlide();
+        if (diff < -50) prevSlide();
+    });
+</script>
+
+</body>
+</html>

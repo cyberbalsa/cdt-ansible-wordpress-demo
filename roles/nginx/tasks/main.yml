@@ -1,0 +1,127 @@
+---
+# =============================================================================
+# Nginx Web Server Setup (Reverse Proxy)
+# =============================================================================
+# This role installs Nginx as a reverse proxy in front of WordPress.
+#
+# WHAT IS A REVERSE PROXY?
+# Instead of users connecting directly to WordPress, they connect to Nginx.
+# Nginx then forwards requests to WordPress. This provides:
+# - Better performance (Nginx handles static files)
+# - Security (WordPress isn't directly exposed)
+# - Flexibility (can add caching, SSL, load balancing later)
+#
+# VARIABLES AVAILABLE TO YOU:
+# - {{ wordpress_server }}      - IP of the WordPress server
+# - {{ wordpress_install_dir }} - Where WordPress files are
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# TASK 1: Install Nginx
+# -----------------------------------------------------------------------------
+# Install the Nginx web server package.
+#
+# HINT: Use the 'apt' module (same as MySQL task 1!)
+# - name: nginx
+# - state: present
+# - update_cache: yes
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
+
+- name: Install Nginx
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the apt module call below (4 lines)                ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   apt:                                                                  ║
+  # ║     name: nginx                                                         ║
+  # ║     state: present                                                      ║
+  # ║     update_cache: yes                                                   ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+
+# -----------------------------------------------------------------------------
+# TASK 2: Deploy Nginx site configuration
+# -----------------------------------------------------------------------------
+# We need to tell Nginx how to forward requests to WordPress.
+# This uses a template file (like wp-config.php in the WordPress role).
+#
+# HINT: Use the 'template' module
+# - src: wordpress.conf.j2
+# - dest: /etc/nginx/sites-available/wordpress
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/template_module.html
+
+- name: Deploy Nginx site configuration
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the template module call below (3 lines)           ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   template:                                                             ║
+  # ║     src: wordpress.conf.j2                                              ║
+  # ║     dest: /etc/nginx/sites-available/wordpress                          ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+  notify: Restart Nginx
+
+# -----------------------------------------------------------------------------
+# TASK 3: Enable the WordPress site
+# -----------------------------------------------------------------------------
+# Nginx uses symbolic links to enable sites.
+# We create a link from sites-enabled/ to sites-available/
+#
+# HINT: Use the 'file' module with state: link
+# - src: /etc/nginx/sites-available/wordpress (the file to link TO)
+# - dest: /etc/nginx/sites-enabled/wordpress (where to create the link)
+# - state: link
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/file_module.html
+
+- name: Enable WordPress site
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the file module call below (4 lines)               ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   file:                                                                 ║
+  # ║     src: /etc/nginx/sites-available/wordpress                           ║
+  # ║     dest: /etc/nginx/sites-enabled/wordpress                            ║
+  # ║     state: link                                                         ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
+  notify: Restart Nginx
+
+# -----------------------------------------------------------------------------
+# TASK 4: Remove default Nginx site
+# -----------------------------------------------------------------------------
+# Nginx comes with a default site that would conflict with ours.
+# This is done for you - note the state: absent to DELETE a file.
+
+- name: Remove default Nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart Nginx
+
+# -----------------------------------------------------------------------------
+# TASK 5: Start and enable Nginx
+# -----------------------------------------------------------------------------
+# Make sure Nginx is running and starts on boot.
+#
+# HINT: Use the 'service' module (same as MySQL task 3!)
+# - name: nginx
+# - state: started
+# - enabled: yes
+#
+# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/service_module.html
+
+- name: Ensure Nginx is running
+  # ╔════════════════════════════════════════════════════════════════════════╗
+  # ║ STUDENT TODO: Write the service module call below (4 lines)            ║
+  # ║                                                                         ║
+  # ║ Example format:                                                         ║
+  # ║   service:                                                              ║
+  # ║     name: nginx                                                         ║
+  # ║     state: started                                                      ║
+  # ║     enabled: yes                                                        ║
+  # ╚════════════════════════════════════════════════════════════════════════╝
+
