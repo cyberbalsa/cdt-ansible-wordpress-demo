@@ -7,31 +7,31 @@
 # =============================================================================
 
 - name: Install MySQL server
-  apt:
+  ansible.builtin.apt:
     name: mysql-server
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Install Python MySQL library (required for Ansible)
-  apt:
+  ansible.builtin.apt:
     name: python3-pymysql
     state: present
 
 - name: Start and enable MySQL service
-  service:
+  ansible.builtin.service:
     name: mysql
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Set MySQL root password
-  mysql_user:
+  community.mysql.mysql_user:
     name: root
     password: "{{ mysql_root_password }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
     state: present
 
 - name: Create WordPress database
-  mysql_db:
+  community.mysql.mysql_db:
     name: "{{ wordpress_db_name }}"
     state: present
     login_user: root
@@ -39,7 +39,7 @@
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Create WordPress database user
-  mysql_user:
+  community.mysql.mysql_user:
     name: "{{ wordpress_db_user }}"
     password: "{{ wordpress_db_password }}"
     priv: "{{ wordpress_db_name }}.*:ALL"
@@ -50,7 +50,7 @@
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Configure MySQL to accept remote connections
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/mysql/mysql.conf.d/mysqld.cnf
     regexp: '^bind-address'
     line: 'bind-address = 0.0.0.0'

@@ -6,32 +6,33 @@
 # =============================================================================
 
 - name: Install Nginx
-  apt:
+  ansible.builtin.apt:
     name: nginx
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Deploy Nginx site configuration
-  template:
+  ansible.builtin.template:
     src: wordpress.conf.j2
     dest: /etc/nginx/sites-available/wordpress
+    mode: '0644'
   notify: Restart Nginx
 
 - name: Enable WordPress site
-  file:
+  ansible.builtin.file:
     src: /etc/nginx/sites-available/wordpress
     dest: /etc/nginx/sites-enabled/wordpress
     state: link
   notify: Restart Nginx
 
 - name: Remove default Nginx site
-  file:
+  ansible.builtin.file:
     path: /etc/nginx/sites-enabled/default
     state: absent
   notify: Restart Nginx
 
 - name: Ensure Nginx is running
-  service:
+  ansible.builtin.service:
     name: nginx
     state: started
-    enabled: yes
+    enabled: true

@@ -1,55 +1,15 @@
 ---
 # =============================================================================
-# WordPress Application Server Setup
+# SOLUTION: WordPress Role Tasks
 # =============================================================================
-# This role installs WordPress with PHP on the application server.
-#
-# After completing this role, you will have:
-# - PHP and required extensions installed
-# - WordPress downloaded and configured
-# - WordPress connected to the MySQL database from Session 1
-#
-# VARIABLES AVAILABLE TO YOU:
-# - {{ wordpress_db_name }}       - Database name
-# - {{ wordpress_db_user }}       - Database username
-# - {{ wordpress_db_password }}   - Database password
-# - {{ database_server }}         - IP of the MySQL server
-# - {{ wordpress_install_dir }}   - Where to install WordPress
-# - {{ php_packages }}            - List of PHP packages to install
+# This is the complete, working version for instructor reference.
 # =============================================================================
-
-# -----------------------------------------------------------------------------
-# TASK 1: Install PHP and Required Extensions
-# -----------------------------------------------------------------------------
-# WordPress is written in PHP, so we need to install PHP and extensions.
-# We'll install multiple packages at once using a list variable.
-#
-# HINT: Use the 'apt' module with a variable for the package list
-# - name: "{{ php_packages }}" (this is a list defined in group_vars)
-# - state: present
-# - update_cache: yes
-#
-# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
 
 - name: Install PHP and extensions
-  # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Replace the fail module below with apt module            ║
-  # ║                                                                         ║
-  # ║ Example format:                                                         ║
-  # ║   ansible.builtin.apt:                                                  ║
-  # ║     name: "{{ php_packages }}"                                          ║
-  # ║     state: present                                                      ║
-  # ║     update_cache: yes                                                   ║
-  # ╚════════════════════════════════════════════════════════════════════════╝
-  ansible.builtin.fail:
-    msg: "STUDENT TODO: Replace this fail module with the apt module to install php_packages"
-
-
-# -----------------------------------------------------------------------------
-# TASK 2: Create WordPress installation directory
-# -----------------------------------------------------------------------------
-# We need a directory to put WordPress files in.
-# This is done for you as an example of the 'file' module.
+  ansible.builtin.apt:
+    name: "{{ php_packages }}"
+    state: present
+    update_cache: true
 
 - name: Create WordPress directory
   ansible.builtin.file:
@@ -59,120 +19,33 @@
     group: www-data
     mode: '0755'
 
-# -----------------------------------------------------------------------------
-# TASK 3: Download WordPress
-# -----------------------------------------------------------------------------
-# Download the latest WordPress from wordpress.org
-#
-# HINT: Use the 'get_url' module
-# - url: "{{ wordpress_download_url }}"
-# - dest: /tmp/wordpress.tar.gz
-#
-# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/get_url_module.html
-
 - name: Download WordPress
-  # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Replace the fail module below with get_url module        ║
-  # ║                                                                         ║
-  # ║ Example format:                                                         ║
-  # ║   ansible.builtin.get_url:                                              ║
-  # ║     url: "{{ wordpress_download_url }}"                                 ║
-  # ║     dest: /tmp/wordpress.tar.gz                                         ║
-  # ╚════════════════════════════════════════════════════════════════════════╝
-  ansible.builtin.fail:
-    msg: "STUDENT TODO: Replace this fail module with the get_url module"
-
-
-# -----------------------------------------------------------------------------
-# TASK 4: Extract WordPress
-# -----------------------------------------------------------------------------
-# Unpack the downloaded archive into our installation directory.
-#
-# HINT: Use the 'unarchive' module
-# - src: /tmp/wordpress.tar.gz
-# - dest: "{{ wordpress_install_dir }}"
-# - remote_src: yes (the file is on the remote server, not our laptop)
-# - extra_opts: ["--strip-components=1"] (removes the wordpress/ folder layer)
-#
-# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
+  ansible.builtin.get_url:
+    url: "{{ wordpress_download_url }}"
+    dest: /tmp/wordpress.tar.gz
+    mode: '0644'
 
 - name: Extract WordPress
-  # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Replace the fail module below with unarchive module      ║
-  # ║                                                                         ║
-  # ║ Example format:                                                         ║
-  # ║   ansible.builtin.unarchive:                                            ║
-  # ║     src: /tmp/wordpress.tar.gz                                          ║
-  # ║     dest: "{{ wordpress_install_dir }}"                                 ║
-  # ║     remote_src: yes                                                     ║
-  # ║     extra_opts: ["--strip-components=1"]                                ║
-  # ╚════════════════════════════════════════════════════════════════════════╝
-  ansible.builtin.fail:
-    msg: "STUDENT TODO: Replace this fail module with the unarchive module"
-
-
-# -----------------------------------------------------------------------------
-# TASK 5: Configure WordPress (wp-config.php)
-# -----------------------------------------------------------------------------
-# WordPress needs a config file to know how to connect to the database.
-# We use a TEMPLATE that Ansible fills in with our variables!
-#
-# HINT: Use the 'template' module
-# - src: wp-config.php.j2 (the template file in this role's templates/ folder)
-# - dest: "{{ wordpress_install_dir }}/wp-config.php"
-# - owner: www-data
-# - group: www-data
-#
-# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/template_module.html
+  ansible.builtin.unarchive:
+    src: /tmp/wordpress.tar.gz
+    dest: "{{ wordpress_install_dir }}"
+    remote_src: true
+    extra_opts: ["--strip-components=1"]
 
 - name: Configure WordPress
-  # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Replace the fail module below with template module       ║
-  # ║                                                                         ║
-  # ║ Example format:                                                         ║
-  # ║   ansible.builtin.template:                                             ║
-  # ║     src: wp-config.php.j2                                               ║
-  # ║     dest: "{{ wordpress_install_dir }}/wp-config.php"                   ║
-  # ║     owner: www-data                                                     ║
-  # ║     group: www-data                                                     ║
-  # ╚════════════════════════════════════════════════════════════════════════╝
-  ansible.builtin.fail:
-    msg: "STUDENT TODO: Replace this fail module with the template module"
-
-
-# -----------------------------------------------------------------------------
-# TASK 6: Set WordPress file ownership
-# -----------------------------------------------------------------------------
-# The web server (www-data user) needs to own the WordPress files.
-#
-# HINT: Use the 'file' module with recurse
-# - path: "{{ wordpress_install_dir }}"
-# - owner: www-data
-# - group: www-data
-# - recurse: yes (apply to all files inside)
-#
-# DOCUMENTATION: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/file_module.html
+  ansible.builtin.template:
+    src: wp-config.php.j2
+    dest: "{{ wordpress_install_dir }}/wp-config.php"
+    owner: www-data
+    group: www-data
+    mode: '0640'
 
 - name: Set WordPress file ownership
-  # ╔════════════════════════════════════════════════════════════════════════╗
-  # ║ STUDENT TODO: Replace the fail module below with file module           ║
-  # ║                                                                         ║
-  # ║ Example format:                                                         ║
-  # ║   ansible.builtin.file:                                                 ║
-  # ║     path: "{{ wordpress_install_dir }}"                                 ║
-  # ║     owner: www-data                                                     ║
-  # ║     group: www-data                                                     ║
-  # ║     recurse: yes                                                        ║
-  # ╚════════════════════════════════════════════════════════════════════════╝
-  ansible.builtin.fail:
-    msg: "STUDENT TODO: Replace this fail module with the file module"
-
-
-# -----------------------------------------------------------------------------
-# TASK 7: Configure PHP-FPM to listen on network
-# -----------------------------------------------------------------------------
-# PHP-FPM needs to accept connections from the Nginx server.
-# This is done for you - it's more advanced configuration.
+  ansible.builtin.file:
+    path: "{{ wordpress_install_dir }}"
+    owner: www-data
+    group: www-data
+    recurse: true
 
 - name: Configure PHP-FPM to listen on all interfaces
   ansible.builtin.lineinfile:
