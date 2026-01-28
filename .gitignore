@@ -1,0 +1,20 @@
+# Claude Code settings
+.claude/
+
+# Ansible retry files
+*.retry
+
+# Python
+__pycache__/
+*.py[cod]
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
