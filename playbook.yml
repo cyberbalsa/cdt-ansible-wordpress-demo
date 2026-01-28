@@ -27,7 +27,7 @@
 
 - name: Configure Database Server
   hosts: database
-  become: yes  # Run as root (sudo)
+  become: true  # Run as root (sudo)
   tags: mysql
 
   roles:
@@ -40,7 +40,7 @@
 
 - name: Configure WordPress Server
   hosts: wordpress
-  become: yes
+  become: true
   tags: wordpress
 
   roles:
@@ -53,7 +53,7 @@
 
 - name: Configure Web Server
   hosts: webserver
-  become: yes
+  become: true
   tags: nginx
 
   roles:

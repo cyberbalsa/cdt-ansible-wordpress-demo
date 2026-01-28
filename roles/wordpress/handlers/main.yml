@@ -4,6 +4,6 @@
 # =============================================================================
 
 - name: Restart PHP-FPM
-  service:
+  ansible.builtin.service:
     name: php8.3-fpm
     state: restarted

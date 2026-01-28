@@ -6,6 +6,6 @@
 # This is useful for restarting services only when configuration changes.
 
 - name: Restart MySQL
-  service:
+  ansible.builtin.service:
     name: mysql
     state: restarted
