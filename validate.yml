@@ -1,0 +1,279 @@
+---
+# =============================================================================
+# Validation Playbook - Verify Your WordPress Stack
+# =============================================================================
+#
+# Run this AFTER completing all three roles to check your work!
+#
+#   ansible-playbook validate.yml
+#
+# This playbook doesn't install or change anything — it only CHECKS that
+# each tier of the stack is configured correctly. Each check prints a
+# PASS or FAIL message so you can see exactly what's working.
+#
+# THE CHECKS:
+#   1. MySQL      → Is the service running? Does the database exist?
+#   2. WordPress  → Are PHP/WordPress files installed? Is PHP-FPM listening?
+#   3. Nginx      → Is the site enabled? Does HTTP return WordPress HTML?
+#
+# =============================================================================
+
+
+# =============================================================================
+# CHECK 1: Database Server (MySQL)
+# =============================================================================
+- name: Validate Database Server
+  hosts: database
+  become: true
+  tags: validate-mysql
+
+  tasks:
+    # service_facts gathers information about all systemd services on the host.
+    # We then use 'assert' to verify MySQL is in the list and running.
+    - name: Gather service status
+      ansible.builtin.service_facts:
+
+    - name: "CHECK: MySQL service is running"
+      ansible.builtin.assert:
+        that:
+          - "'mysql.service' in ansible_facts.services"
+          - "ansible_facts.services['mysql.service'].state == 'running'"
+        fail_msg: |
+          FAIL: MySQL service is not running!
+          Fix: Check your 'Start and enable MySQL service' task in roles/mysql/tasks/main.yml
+        success_msg: "PASS: MySQL service is running"
+
+    # Use the same mysql_db module from the main playbook in check_mode.
+    # check_mode: true means "tell me what WOULD change, but don't do it."
+    # If the database already exists → changed=false (nothing to do = PASS).
+    # If it's missing → changed=true (would need to create it = FAIL).
+    - name: Verify WordPress database exists
+      community.mysql.mysql_db:
+        name: "{{ wordpress_db_name }}"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      check_mode: true
+      register: db_check
+
+    - name: "CHECK: WordPress database exists"
+      ansible.builtin.assert:
+        that:
+          - "not db_check.changed"
+        fail_msg: |
+          FAIL: Database '{{ wordpress_db_name }}' not found in MySQL!
+          Fix: Check your 'Create WordPress database' task in roles/mysql/tasks/main.yml
+        success_msg: "PASS: Database '{{ wordpress_db_name }}' exists"
+
+    # Same pattern for the database user — check_mode verifies it exists
+    # without modifying anything.
+    - name: Verify WordPress database user exists
+      community.mysql.mysql_user:
+        name: "{{ wordpress_db_user }}"
+        password: "{{ wordpress_db_password }}"
+        priv: "{{ wordpress_db_name }}.*:ALL"
+        host: "{{ wordpress_server }}"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      check_mode: true
+      register: user_check
+
+    - name: "CHECK: WordPress database user exists"
+      ansible.builtin.assert:
+        that:
+          - "not user_check.changed"
+        fail_msg: |
+          FAIL: Database user '{{ wordpress_db_user }}' not found or misconfigured!
+          Fix: Check your 'Create WordPress database user' task in roles/mysql/tasks/main.yml
+        success_msg: "PASS: Database user '{{ wordpress_db_user }}' exists with correct privileges"
+
+
+# =============================================================================
+# CHECK 2: WordPress Application Server (PHP + WordPress)
+# =============================================================================
+- name: Validate WordPress Server
+  hosts: wordpress
+  become: true
+  tags: validate-wordpress
+
+  tasks:
+    - name: Gather service status
+      ansible.builtin.service_facts:
+
+    - name: "CHECK: PHP-FPM service is running"
+      ansible.builtin.assert:
+        that:
+          - "'php8.3-fpm.service' in ansible_facts.services"
+          - "ansible_facts.services['php8.3-fpm.service'].state == 'running'"
+        fail_msg: |
+          FAIL: PHP-FPM is not running!
+          Fix: Check that PHP packages were installed (Task 1) and PHP-FPM service is started (Task 7-8)
+        success_msg: "PASS: PHP-FPM service is running"
+
+    # wait_for checks if a TCP port is accepting connections.
+    # PHP-FPM should be listening on port 9000 for Nginx to connect.
+    - name: "CHECK: PHP-FPM is listening on port 9000"
+      ansible.builtin.wait_for:
+        port: 9000
+        timeout: 5
+      register: fpm_port
+
+    # stat checks if a file exists and returns its metadata.
+    # wp-settings.php is a core WordPress file — if it exists, WordPress
+    # was downloaded and extracted correctly.
+    - name: Check for WordPress core file
+      ansible.builtin.stat:
+        path: "{{ wordpress_install_dir }}/wp-settings.php"
+      register: wp_core
+
+    - name: "CHECK: WordPress files are installed"
+      ansible.builtin.assert:
+        that:
+          - wp_core.stat.exists
+        fail_msg: |
+          FAIL: WordPress files not found in {{ wordpress_install_dir }}!
+          Fix: Check your 'Download WordPress' (Task 3) and 'Extract WordPress' (Task 4) tasks
+        success_msg: "PASS: WordPress files are installed in {{ wordpress_install_dir }}"
+
+    # Check that wp-config.php was deployed from the template and has
+    # the correct ownership (www-data) so PHP can read it.
+    - name: Check wp-config.php
+      ansible.builtin.stat:
+        path: "{{ wordpress_install_dir }}/wp-config.php"
+      register: wp_config
+
+    - name: "CHECK: wp-config.php is deployed with correct ownership"
+      ansible.builtin.assert:
+        that:
+          - wp_config.stat.exists
+          - wp_config.stat.pw_name == 'www-data'
+          - wp_config.stat.gr_name == 'www-data'
+        fail_msg: |
+          FAIL: wp-config.php is missing or has wrong ownership!
+          Fix: Check your 'Configure WordPress' (Task 5) and 'Set WordPress file ownership' (Task 6) tasks
+        success_msg: "PASS: wp-config.php exists and is owned by www-data"
+
+    # Verify WordPress can actually connect to the MySQL database.
+    # We run a PHP snippet that connects using the same credentials
+    # WordPress would use. If it prints "OK", the DB is reachable.
+    - name: "CHECK: WordPress can connect to MySQL database"
+      ansible.builtin.shell:
+        cmd: >
+          php -r '$conn = new mysqli("{{ database_server }}", "{{ wordpress_db_user }}",
+            "{{ wordpress_db_password }}", "{{ wordpress_db_name }}");
+          if ($conn->connect_error) { echo "FAIL:" . $conn->connect_error; exit(1); }
+          echo "OK"; $conn->close();'
+      register: db_connect
+      changed_when: false
+      failed_when: db_connect.rc != 0
+
+    - name: "RESULT: Database connectivity"
+      ansible.builtin.debug:
+        msg: "PASS: WordPress can reach MySQL at {{ database_server }}"
+
+
+# =============================================================================
+# CHECK 3: Web Server (Nginx) + End-to-End HTTP Test
+# =============================================================================
+- name: Validate Web Server and End-to-End
+  hosts: webserver
+  become: true
+  tags: validate-nginx
+
+  tasks:
+    - name: Gather service status
+      ansible.builtin.service_facts:
+
+    - name: "CHECK: Nginx service is running"
+      ansible.builtin.assert:
+        that:
+          - "'nginx.service' in ansible_facts.services"
+          - "ansible_facts.services['nginx.service'].state == 'running'"
+        fail_msg: |
+          FAIL: Nginx is not running!
+          Fix: Check your 'Ensure Nginx is running' task (Task 5) in roles/nginx/tasks/main.yml
+        success_msg: "PASS: Nginx service is running"
+
+    # Check that the WordPress site symlink exists in sites-enabled.
+    # islnk confirms it's a symbolic link (not a regular file).
+    - name: Check WordPress site is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/wordpress
+      register: nginx_site
+
+    - name: "CHECK: WordPress Nginx site is enabled"
+      ansible.builtin.assert:
+        that:
+          - nginx_site.stat.exists
+          - nginx_site.stat.islnk
+        fail_msg: |
+          FAIL: WordPress site is not enabled in Nginx!
+          Fix: Check your 'Enable WordPress site' task (Task 3) — it should create a symlink
+        success_msg: "PASS: WordPress site is enabled (symlink exists)"
+
+    - name: Check default site is removed
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/default
+      register: default_site
+
+    - name: "CHECK: Default Nginx site is removed"
+      ansible.builtin.assert:
+        that:
+          - not default_site.stat.exists
+        fail_msg: "FAIL: Default Nginx site is still enabled — it may conflict with WordPress!"
+        success_msg: "PASS: Default Nginx site is removed"
+
+    # The ultimate end-to-end test: make an HTTP request to localhost.
+    # If the full stack works, Nginx receives the request, forwards it
+    # to PHP-FPM on the WordPress server, which queries MySQL and returns
+    # the WordPress installation page as HTML.
+    - name: "CHECK: End-to-end HTTP request returns WordPress HTML"
+      ansible.builtin.uri:
+        url: "http://localhost"
+        follow_redirects: all
+        return_content: true
+        status_code: 200
+      register: http_result
+
+    - name: "CHECK: Response contains WordPress content"
+      ansible.builtin.assert:
+        that:
+          - "'<!DOCTYPE html>' in http_result.content or '<html' in http_result.content"
+          - "'wp-' in http_result.content or 'WordPress' in http_result.content"
+        fail_msg: |
+          FAIL: Nginx responded but the page doesn't contain WordPress content!
+          The request chain Nginx → PHP-FPM → WordPress → MySQL may be broken.
+          Debug tips:
+            - Is PHP-FPM running on the WordPress server? (port 9000)
+            - Does the Nginx template point to the correct WordPress server IP?
+            - Can WordPress connect to MySQL?
+        success_msg: "PASS: WordPress is serving HTML through Nginx!"
+
+    # If we reach this task, everything above passed!
+    - name: Print success summary
+      ansible.builtin.debug:
+        msg:
+          - ""
+          - "=========================================================="
+          - "  ALL CHECKS PASSED — Your WordPress stack is working!"
+          - "=========================================================="
+          - ""
+          - "  [database]   MySQL service ............ PASS"
+          - "  [database]   WordPress database ....... PASS"
+          - "  [database]   WordPress DB user ........ PASS"
+          - "  [wordpress]  PHP-FPM service .......... PASS"
+          - "  [wordpress]  WordPress files .......... PASS"
+          - "  [wordpress]  wp-config.php ............ PASS"
+          - "  [wordpress]  DB connectivity .......... PASS"
+          - "  [webserver]  Nginx service ............ PASS"
+          - "  [webserver]  Site enabled ............. PASS"
+          - "  [webserver]  Default site removed ..... PASS"
+          - "  [webserver]  HTTP returns WordPress ... PASS"
+          - ""
+          - "  Open http://{{ webserver_ip }} in your browser"
+          - "  to see the WordPress setup wizard!"
+          - ""
+          - "=========================================================="
