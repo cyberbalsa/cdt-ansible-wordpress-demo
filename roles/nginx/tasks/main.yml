@@ -1,16 +1,32 @@
 ---
 # =============================================================================
-# SOLUTION: Nginx Role Tasks
+# Nginx Web Server Setup (Reverse Proxy)
 # =============================================================================
-# This is the complete, working version for instructor reference.
+# This role installs Nginx as a reverse proxy in front of WordPress.
+#
+# After completing this role, you will have:
+# - Nginx installed and running
+# - A site configuration that proxies requests to PHP-FPM on the WordPress server
+# - The default Nginx site removed to avoid conflicts
+#
+# KEY CONCEPT: Reverse Proxy
+# Users connect to Nginx (port 80), which forwards PHP requests to the
+# WordPress server via FastCGI (port 9000). Nginx handles static files
+# directly, improving performance. This separation also means you can add
+# SSL, caching, or load balancing later without touching WordPress.
 # =============================================================================
 
+# Install the Nginx web server. Same apt pattern as MySQL and PHP.
 - name: Install Nginx
   ansible.builtin.apt:
     name: nginx
     state: present
     update_cache: true
 
+# Deploy the Nginx site configuration from a Jinja2 template.
+# The template fills in the WordPress server IP and install directory so
+# Nginx knows where to forward requests. Changes trigger a restart via
+# the 'notify' handler.
 - name: Deploy Nginx site configuration
   ansible.builtin.template:
     src: wordpress.conf.j2
@@ -18,6 +34,10 @@
     mode: '0644'
   notify: Restart Nginx
 
+# Activate the site by creating a symlink from sites-enabled/ to
+# sites-available/. Nginx only reads configs from sites-enabled/.
+# Using state: link makes this idempotent — if the link exists, Ansible
+# reports "ok" and moves on.
 - name: Enable WordPress site
   ansible.builtin.file:
     src: /etc/nginx/sites-available/wordpress
@@ -25,12 +45,16 @@
     state: link
   notify: Restart Nginx
 
+# Remove the default site that ships with Nginx. It would conflict with
+# our WordPress configuration. state: absent is idempotent — if the file
+# is already gone, Ansible does nothing.
 - name: Remove default Nginx site
   ansible.builtin.file:
     path: /etc/nginx/sites-enabled/default
     state: absent
   notify: Restart Nginx
 
+# Ensure Nginx is running and set to start on boot.
 - name: Ensure Nginx is running
   ansible.builtin.service:
     name: nginx

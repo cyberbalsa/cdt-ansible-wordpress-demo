@@ -1,16 +1,32 @@
 ---
 # =============================================================================
-# SOLUTION: WordPress Role Tasks
+# WordPress Application Server Setup
 # =============================================================================
-# This is the complete, working version for instructor reference.
+# This role installs WordPress with PHP on the application server.
+#
+# After completing this role, you will have:
+# - PHP and required extensions installed
+# - WordPress downloaded and configured
+# - WordPress connected to the MySQL database
+# - PHP-FPM listening on the network for Nginx to connect
+#
+# KEY CONCEPT: Templates
+# The template module takes a Jinja2 file (*.j2) and fills in variables
+# before copying it to the server. This is how we inject database credentials
+# into wp-config.php without hardcoding them.
 # =============================================================================
 
+# Install PHP and all extensions WordPress needs. The 'php_packages' variable
+# is a list defined in group_vars/all.yml — the apt module accepts a list and
+# installs every package in one transaction.
 - name: Install PHP and extensions
   ansible.builtin.apt:
     name: "{{ php_packages }}"
     state: present
     update_cache: true
 
+# Create the target directory before we extract files into it.
+# owner/group set to www-data so the web server can read the files.
 - name: Create WordPress directory
   ansible.builtin.file:
     path: "{{ wordpress_install_dir }}"
@@ -19,19 +35,31 @@
     group: www-data
     mode: '0755'
 
+# Download the WordPress tarball from wordpress.org. The get_url module
+# handles HTTP downloads and can verify checksums if needed.
 - name: Download WordPress
   ansible.builtin.get_url:
     url: "{{ wordpress_download_url }}"
     dest: /tmp/wordpress.tar.gz
     mode: '0644'
 
+# Extract WordPress into the install directory.
+# - remote_src: true — the archive is already on the server (from get_url)
+# - extra_opts: ["--strip-components=1"] — the tarball contains a wordpress/
+#   subdirectory; this strips it so files land directly in wordpress_install_dir
+# - creates: — if wp-settings.php already exists, skip extraction entirely.
+#   This makes the task idempotent and avoids overwriting files on re-runs.
 - name: Extract WordPress
   ansible.builtin.unarchive:
     src: /tmp/wordpress.tar.gz
     dest: "{{ wordpress_install_dir }}"
     remote_src: true
     extra_opts: ["--strip-components=1"]
+    creates: "{{ wordpress_install_dir }}/wp-settings.php"
 
+# Deploy wp-config.php from a Jinja2 template. Ansible fills in database
+# credentials (db name, user, password, host) from our variables.
+# Permissions are restricted (0640) because this file contains passwords.
 - name: Configure WordPress
   ansible.builtin.template:
     src: wp-config.php.j2
@@ -40,6 +68,9 @@
     group: www-data
     mode: '0640'
 
+# Ensure all WordPress files are owned by the www-data user so PHP-FPM
+# (which runs as www-data) can read and write them as needed.
+# The 'recurse' option applies ownership to every file and subdirectory.
 - name: Set WordPress file ownership
   ansible.builtin.file:
     path: "{{ wordpress_install_dir }}"
@@ -47,6 +78,9 @@
     group: www-data
     recurse: true
 
+# PHP-FPM defaults to listening on a Unix socket. We change it to listen
+# on TCP port 9000 so the Nginx server (a different machine) can connect
+# over the network.
 - name: Configure PHP-FPM to listen on all interfaces
   ansible.builtin.lineinfile:
     path: /etc/php/8.3/fpm/pool.d/www.conf

@@ -1,35 +1,61 @@
 ---
 # =============================================================================
-# SOLUTION: MySQL Role Tasks
+# MySQL Database Server Setup
 # =============================================================================
-# This is the complete, working version for instructor reference.
-# Students should NOT see this file during the exercise.
+# This role installs and configures MySQL for WordPress.
+#
+# After completing this role, you will have:
+# - MySQL server installed and running
+# - A root password set (idempotently — safe to re-run)
+# - A dedicated WordPress database and user
+# - MySQL listening on all interfaces for remote connections
+#
+# KEY CONCEPT: Idempotency
+# Every task here can run multiple times without breaking anything.
+# Ansible checks the current state before making changes.
 # =============================================================================
 
+# Install the MySQL server package. The apt module handles package management
+# on Debian/Ubuntu. 'update_cache' refreshes the package index first.
 - name: Install MySQL server
   ansible.builtin.apt:
     name: mysql-server
     state: present
     update_cache: true
 
+# Ansible uses the PyMySQL library to talk to MySQL. Without this, the
+# community.mysql modules (mysql_user, mysql_db) cannot connect.
 - name: Install Python MySQL library (required for Ansible)
   ansible.builtin.apt:
     name: python3-pymysql
     state: present
 
+# The service module ensures MySQL is running now (state: started) and will
+# start automatically on boot (enabled: true).
 - name: Start and enable MySQL service
   ansible.builtin.service:
     name: mysql
     state: started
     enabled: true
 
+# Set the root password idempotently:
+# - check_implicit_admin: true — on a fresh install, MySQL root has no
+#   password, so the module first tries logging in without one. On later
+#   runs it falls back to the login_password credentials below.
+# - login_user / login_password — credentials for subsequent runs when
+#   the password is already set.
 - name: Set MySQL root password
   community.mysql.mysql_user:
     name: root
     password: "{{ mysql_root_password }}"
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
+    check_implicit_admin: true
     state: present
 
+# Create the WordPress database. The mysql_db module is idempotent — if
+# the database already exists, Ansible reports "ok" and moves on.
 - name: Create WordPress database
   community.mysql.mysql_db:
     name: "{{ wordpress_db_name }}"
@@ -38,6 +64,9 @@
     login_password: "{{ mysql_root_password }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
+# Create a dedicated MySQL user for WordPress with privileges limited to
+# the WordPress database only. The 'host' parameter controls which server
+# IP is allowed to connect — here it's the WordPress application server.
 - name: Create WordPress database user
   community.mysql.mysql_user:
     name: "{{ wordpress_db_user }}"
@@ -49,6 +78,10 @@
     login_password: "{{ mysql_root_password }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
+# By default MySQL only listens on 127.0.0.1. We change bind-address to
+# 0.0.0.0 so the WordPress server can connect over the network.
+# The 'notify' triggers the Restart MySQL handler only when this line
+# actually changes — another example of idempotency.
 - name: Configure MySQL to accept remote connections
   ansible.builtin.lineinfile:
     path: /etc/mysql/mysql.conf.d/mysqld.cnf
