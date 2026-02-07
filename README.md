@@ -15,7 +15,7 @@ Welcome! In this hands-on lab, you'll learn Ansible by deploying a real WordPres
 ## Prerequisites
 
 - VS Code installed on your computer
-- Access to your 3 lab servers (IPs provided by instructor)
+- Access to your 3 lab servers (IPs provided by Openstack as a floating ip)
 
 ---
 
